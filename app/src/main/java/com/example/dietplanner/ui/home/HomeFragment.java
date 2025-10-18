@@ -1,5 +1,6 @@
 package com.example.dietplanner.ui.home;
 
+import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -7,12 +8,13 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.DecelerateInterpolator;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import com.example.dietplanner.data.CoreCalculator;
 import com.example.dietplanner.MealSelectionActivity;
 import com.example.dietplanner.UserDetailsActivity;
+import com.example.dietplanner.data.CoreCalculator;
 import com.example.dietplanner.databinding.FragmentHomeBinding;
 import java.util.Locale;
 
@@ -22,6 +24,7 @@ public class HomeFragment extends Fragment {
     private SharedPreferences prefs;
     private CoreCalculator coreCalculator;
     private String goalsString = "";
+    private int dailyCalorieTarget = 2000; // Default value
 
     @Nullable
     @Override
@@ -41,7 +44,6 @@ public class HomeFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        // This runs every time you return to the home screen
         updateConsumedCalories();
         updateSelectedMeals();
     }
@@ -56,17 +58,38 @@ public class HomeFragment extends Fragment {
         binding.textViewGreeting.setText("Hello, " + name + "!");
         this.goalsString = coreCalculator.getDietaryGoals(name, age, weight, height, gender);
         binding.textViewGoals.setText(this.goalsString);
+
+        // Extract the target calorie goal for the progress bar
+        try {
+            String[] lines = goalsString.split("\n");
+            for (String line : lines) {
+                if (line.contains("Daily Calorie Target")) {
+                    String calPart = line.split(":")[1].trim().split(" ")[0];
+                    dailyCalorieTarget = Integer.parseInt(calPart);
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            dailyCalorieTarget = 2000; // Fallback
+        }
     }
 
     private void updateConsumedCalories() {
         float consumed = prefs.getFloat("caloriesConsumed", 0f);
-        binding.textViewCaloriesConsumed.setText(String.format(Locale.US, "%.0f kcal", consumed));
+        binding.textViewCaloriesConsumed.setText(String.format(Locale.US, "%.0f", consumed));
+
+        // Animate the progress bar
+        int progress = (int) ((consumed / dailyCalorieTarget) * 100);
+        ObjectAnimator animation = ObjectAnimator.ofInt(binding.progressBar, "progress", 0, progress);
+        animation.setDuration(1500); // 1.5 seconds
+        animation.setInterpolator(new DecelerateInterpolator());
+        animation.start();
     }
 
     private void updateSelectedMeals() {
         String breakfast = prefs.getString("selected_Breakfast", "");
         if (!breakfast.isEmpty()) {
-            binding.textViewBreakfastSelection.setText(breakfast.replace(", ", "\n• "));
+            binding.textViewBreakfastSelection.setText("• " + breakfast.replace(", ", "\n• "));
             binding.textViewBreakfastSelection.setVisibility(View.VISIBLE);
         } else {
             binding.textViewBreakfastSelection.setVisibility(View.GONE);
@@ -74,7 +97,7 @@ public class HomeFragment extends Fragment {
 
         String lunch = prefs.getString("selected_Lunch", "");
         if (!lunch.isEmpty()) {
-            binding.textViewLunchSelection.setText(lunch.replace(", ", "\n• "));
+            binding.textViewLunchSelection.setText("• " + lunch.replace(", ", "\n• "));
             binding.textViewLunchSelection.setVisibility(View.VISIBLE);
         } else {
             binding.textViewLunchSelection.setVisibility(View.GONE);
@@ -82,7 +105,7 @@ public class HomeFragment extends Fragment {
 
         String dinner = prefs.getString("selected_Dinner", "");
         if (!dinner.isEmpty()) {
-            binding.textViewDinnerSelection.setText(dinner.replace(", ", "\n• "));
+            binding.textViewDinnerSelection.setText("• " + dinner.replace(", ", "\n• "));
             binding.textViewDinnerSelection.setVisibility(View.VISIBLE);
         } else {
             binding.textViewDinnerSelection.setVisibility(View.GONE);

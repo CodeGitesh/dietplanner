@@ -41,6 +41,7 @@ public class HomeActivity extends AppCompatActivity {
 
         loadCsvData();
 
+        // This is the correct way to set up the navigation controller
         NavHostFragment navHostFragment = (NavHostFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.nav_host_fragment);
         NavController navController = navHostFragment.getNavController();
@@ -51,7 +52,7 @@ public class HomeActivity extends AppCompatActivity {
 
     @Override
     public boolean onSupportNavigateUp() {
-        NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
+        NavController navController = NavHostFragment.findNavController(getSupportFragmentManager().findFragmentById(R.id.nav_host_fragment));
         return navController.navigateUp() || super.onSupportNavigateUp();
     }
 
@@ -62,7 +63,6 @@ public class HomeActivity extends AppCompatActivity {
         if (!todayDate.equals(lastLoginDate)) {
             SharedPreferences.Editor editor = prefs.edit();
             editor.putString("lastLoginDate", todayDate);
-            // Save yesterday's data to history
             float consumed = prefs.getFloat("caloriesConsumed", 0f);
             if (consumed > 0) {
                 String breakfast = prefs.getString("selected_Breakfast", "None");
@@ -72,7 +72,6 @@ public class HomeActivity extends AppCompatActivity {
                 editor.putString("history_" + lastLoginDate, historyEntry);
             }
 
-            // Reset today's data
             editor.remove("caloriesConsumed");
             editor.remove("selected_Breakfast");
             editor.remove("selected_Lunch");

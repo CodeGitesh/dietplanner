@@ -1,0 +1,20 @@
+<resources>
+    <string name="app_name">Smart Diet Planner</string>
+    <string name="user_details_title">Let\'s Get to Know You</string>
+    <string name="hint_name">Full Name</string>
+    <string name="hint_age">Age (years)</string>
+    <string name="hint_weight">Weight (kg)</string>
+    <string name="hint_height">Height (cm)</string>
+    <string name="gender">Gender</string>
+    <string name="male">Male</string>
+    <string name="female">Female</string>
+    <string name="button_save_continue">Save and Continue</string>
+    <string name="error_fill_all_fields">Please fill all fields</string>
+    <string name="your_daily_plan">Your Daily Plan</string>
+    <string name="breakfast">Breakfast</string>
+    <string name="lunch">Lunch</string>
+    <string name="dinner">Dinner</string>
+    <string name="find_options_button">Find Options</string>
+    <string name="calories_format">%d kcal</string>
+    <string name="protein_format">%d g Protein</string>
+</resources>

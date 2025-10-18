@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.home.HomeFragment">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/textView_greeting"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            tools:text="Hello, User!" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:cardCornerRadius="8dp">
+            <TextView
+                android:id="@+id/textView_goals"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:lineSpacingExtra="4dp"
+                android:padding="16dp"
+                android:textSize="16sp"
+                tools:text="Your Daily Goals..." />
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            app:cardBackgroundColor="@color/purple_200">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:padding="16dp">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Calories Consumed Today"
+                    android:textColor="@color/black"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+                <TextView
+                    android:id="@+id/textView_calories_consumed"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/black"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    tools:text="0 kcal" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <TextView style="@style/TextAppearance.MaterialComponents.Headline6"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="Breakfast" />
+        <Button android:id="@+id/button_find_breakfast"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Find Options" />
+        <TextView
+            android:id="@+id/textView_breakfast_selection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:background="#E0E0E0"
+            android:visibility="gone"
+            tools:text="You selected: Dal, Roti" />
+
+        <TextView style="@style/TextAppearance.MaterialComponents.Headline6"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Lunch" />
+        <Button android:id="@+id/button_find_lunch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Find Options" />
+        <TextView
+            android:id="@+id/textView_lunch_selection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:background="#E0E0E0"
+            android:visibility="gone"
+            tools:text="You selected: Chicken Curry, Rice" />
+
+        <TextView style="@style/TextAppearance.MaterialComponents.Headline6"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Dinner" />
+        <Button android:id="@+id/button_find_dinner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Find Options" />
+        <TextView
+            android:id="@+id/textView_dinner_selection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:background="#E0E0E0"
+            android:visibility="gone"
+            tools:text="You selected: Paneer Tikka" />
+
+    </LinearLayout>
+</ScrollView>

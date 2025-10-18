@@ -5,7 +5,7 @@ project("dietplanner")
 add_library(
         dietplanner-lib
         SHARED
-        native-lib.cpp)
+        native-lib.c)
 
 find_library(
         log-lib

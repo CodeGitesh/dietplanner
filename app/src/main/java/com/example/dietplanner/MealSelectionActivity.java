@@ -4,6 +4,9 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.example.dietplanner.data.CoreCalculator;
+import com.example.dietplanner.data.MealOption;
 import com.example.dietplanner.databinding.ActivityMealSelectionBinding;
 import java.util.List;
 

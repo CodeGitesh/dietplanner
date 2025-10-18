@@ -5,14 +5,18 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.navigation.NavController;
-import androidx.navigation.fragment.NavHostFragment; // <-- Important new import
+import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.NavigationUI;
+import com.example.dietplanner.data.CoreCalculator;
 import com.example.dietplanner.databinding.ActivityHomeBinding;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 public class HomeActivity extends AppCompatActivity {
 
@@ -23,6 +27,8 @@ public class HomeActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         SharedPreferences prefs = getSharedPreferences(UserDetailsActivity.PREFS_NAME, 0);
+        checkDateAndResetData(prefs);
+
         if (!prefs.contains("userName")) {
             startActivity(new Intent(this, UserDetailsActivity.class));
             finish();
@@ -31,15 +37,48 @@ public class HomeActivity extends AppCompatActivity {
 
         binding = ActivityHomeBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+        setSupportActionBar(binding.toolbar);
 
         loadCsvData();
 
-        // **THIS IS THE SAFER WAY TO GET THE NAV CONTROLLER**
         NavHostFragment navHostFragment = (NavHostFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.nav_host_fragment);
         NavController navController = navHostFragment.getNavController();
 
         NavigationUI.setupWithNavController(binding.bottomNavView, navController);
+        NavigationUI.setupActionBarWithNavController(this, navController);
+    }
+
+    @Override
+    public boolean onSupportNavigateUp() {
+        NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
+        return navController.navigateUp() || super.onSupportNavigateUp();
+    }
+
+    private void checkDateAndResetData(SharedPreferences prefs) {
+        String todayDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+        String lastLoginDate = prefs.getString("lastLoginDate", "");
+
+        if (!todayDate.equals(lastLoginDate)) {
+            SharedPreferences.Editor editor = prefs.edit();
+            editor.putString("lastLoginDate", todayDate);
+            // Save yesterday's data to history
+            float consumed = prefs.getFloat("caloriesConsumed", 0f);
+            if (consumed > 0) {
+                String breakfast = prefs.getString("selected_Breakfast", "None");
+                String lunch = prefs.getString("selected_Lunch", "None");
+                String dinner = prefs.getString("selected_Dinner", "None");
+                String historyEntry = "Consumed: " + consumed + " kcal\nB: " + breakfast + "\nL: " + lunch + "\nD: " + dinner;
+                editor.putString("history_" + lastLoginDate, historyEntry);
+            }
+
+            // Reset today's data
+            editor.remove("caloriesConsumed");
+            editor.remove("selected_Breakfast");
+            editor.remove("selected_Lunch");
+            editor.remove("selected_Dinner");
+            editor.apply();
+        }
     }
 
     private void loadCsvData() {

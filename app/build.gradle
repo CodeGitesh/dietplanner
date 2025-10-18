@@ -1,6 +1,5 @@
 plugins {
     id 'com.android.application'
-    id 'org.jetbrains.kotlin.android'
 }
 
 android {
@@ -9,8 +8,8 @@ android {
 
     defaultConfig {
         applicationId "com.example.dietplanner"
-        minSdk 29 // Android 10
-        targetSdk 33
+        minSdk 29
+        targetSdk 34
         versionCode 1
         versionName "1.0"
 
@@ -36,7 +35,7 @@ android {
     externalNativeBuild {
         cmake {
             path file('src/main/cpp/CMakeLists.txt')
-            version '3.22.1'
+            version '3.22.1' // Make sure this matches your installed CMake version
         }
     }
     buildFeatures {
@@ -46,10 +45,11 @@ android {
 
 dependencies {
     implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'com.google.android.material:material:1.9.0'
+    implementation 'com.google.android.material:material:1.10.0' // Using a recent material library
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-    implementation 'androidx.recyclerview:recyclerview:1.3.0'
+    implementation 'androidx.recyclerview:recyclerview:1.3.1'
 
+    // Navigation component libraries for the menu bar
     implementation 'androidx.navigation:navigation-fragment:2.7.4'
     implementation 'androidx.navigation:navigation-ui:2.7.4'
 

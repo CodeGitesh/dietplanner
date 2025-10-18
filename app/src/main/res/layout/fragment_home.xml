@@ -12,18 +12,9 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <TextView
-            android:id="@+id/textView_greeting"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="24sp"
-            android:textStyle="bold"
-            tools:text="Hello, User!" />
-
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
             app:cardCornerRadius="8dp">
             <TextView
                 android:id="@+id/textView_goals"
@@ -35,88 +26,89 @@
                 tools:text="Your Daily Goals..." />
         </com.google.android.material.card.MaterialCardView>
 
-        <com.google.android.material.card.MaterialCardView
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            app:cardBackgroundColor="@color/purple_200">
+            android:layout_marginTop="16dp">
+
+            <ProgressBar
+                android:id="@+id/progress_bar"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:indeterminate="false"
+                android:progressDrawable="@drawable/circular_progress_bar"
+                android:rotation="-90"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintDimensionRatio="1:1"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                tools:progress="60" />
+
             <LinearLayout
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:padding="16dp">
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Calories Consumed Today"
-                    android:textColor="@color/black"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
+                android:gravity="center"
+                android:orientation="vertical"
+                app:layout_constraintBottom_toBottomOf="@id/progress_bar"
+                app:layout_constraintEnd_toEndOf="@id/progress_bar"
+                app:layout_constraintStart_toStartOf="@id/progress_bar"
+                app:layout_constraintTop_toTopOf="@id/progress_bar">
+
                 <TextView
                     android:id="@+id/textView_calories_consumed"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textColor="@color/black"
-                    android:textSize="18sp"
+                    android:textSize="28sp"
                     android:textStyle="bold"
-                    tools:text="0 kcal" />
+                    tools:text="1200" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="kcal consumed"
+                    android:textSize="14sp" />
             </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
 
         <TextView style="@style/TextAppearance.MaterialComponents.Headline6"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:text="Breakfast" />
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_marginTop="24dp" android:text="@string/breakfast" />
         <Button android:id="@+id/button_find_breakfast"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Find Options" />
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="@string/find_options" />
         <TextView
             android:id="@+id/textView_breakfast_selection"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:padding="8dp"
-            android:background="#E0E0E0"
-            android:visibility="gone"
-            tools:text="You selected: Dal, Roti" />
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:padding="8dp" android:background="@color/light_gray"
+            android:visibility="gone" tools:text="• Dal, Roti" />
 
         <TextView style="@style/TextAppearance.MaterialComponents.Headline6"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Lunch" />
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_marginTop="16dp" android:text="@string/lunch" />
         <Button android:id="@+id/button_find_lunch"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Find Options" />
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="@string/find_options" />
         <TextView
             android:id="@+id/textView_lunch_selection"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:padding="8dp"
-            android:background="#E0E0E0"
-            android:visibility="gone"
-            tools:text="You selected: Chicken Curry, Rice" />
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:padding="8dp" android:background="@color/light_gray"
+            android:visibility="gone" tools:text="• Chicken Curry, Rice" />
 
         <TextView style="@style/TextAppearance.MaterialComponents.Headline6"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Dinner" />
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_marginTop="16dp" android:text="@string/dinner" />
         <Button android:id="@+id/button_find_dinner"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Find Options" />
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="@string/find_options" />
         <TextView
             android:id="@+id/textView_dinner_selection"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:padding="8dp"
-            android:background="#E0E0E0"
-            android:visibility="gone"
-            tools:text="You selected: Paneer Tikka" />
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:padding="8dp" android:background="@color/light_gray"
+            android:visibility="gone" tools:text="• Paneer Tikka" />
 
     </LinearLayout>
 </ScrollView>

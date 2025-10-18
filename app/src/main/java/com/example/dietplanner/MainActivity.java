@@ -4,6 +4,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+
+import com.example.dietplanner.data.CoreCalculator;
 import com.example.dietplanner.databinding.ActivityMainBinding;
 import java.io.File;
 import java.io.FileOutputStream;

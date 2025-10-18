@@ -8,13 +8,21 @@
     <string name="gender">Gender</string>
     <string name="male">Male</string>
     <string name="female">Female</string>
+    <string name="dietary_preference">Dietary Preference</string>
+    <string name="vegetarian">Vegetarian</string>
+    <string name="non_vegetarian">Non-Vegetarian</string>
     <string name="button_save_continue">Save and Continue</string>
     <string name="error_fill_all_fields">Please fill all fields</string>
-    <string name="your_daily_plan">Your Daily Plan</string>
+    <string name="calories_consumed_today">Calories Consumed Today</string>
+    <string name="find_options">Find or Build Meal</string>
     <string name="breakfast">Breakfast</string>
     <string name="lunch">Lunch</string>
     <string name="dinner">Dinner</string>
-    <string name="find_options_button">Find Options</string>
-    <string name="calories_format">%d kcal</string>
-    <string name="protein_format">%d g Protein</string>
+    <string name="home">Home</string>
+    <string name="profile">Profile</string>
+    <string name="history">History</string>
+    <string name="edit_profile">Edit Profile</string>
+    <string name="recommendations">Our Recommendations</string>
+    <string name="create_your_own">Or, Create Your Own Meal</string>
+    <string name="confirm_meal">Confirm Meal</string>
 </resources>

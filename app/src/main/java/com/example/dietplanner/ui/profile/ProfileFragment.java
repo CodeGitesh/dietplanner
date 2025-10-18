@@ -24,15 +24,19 @@ public class ProfileFragment extends Fragment {
         binding = FragmentProfileBinding.inflate(inflater, container, false);
         prefs = requireActivity().getSharedPreferences(UserDetailsActivity.PREFS_NAME, Context.MODE_PRIVATE);
 
-        displayProfileDetails();
-
         binding.buttonEditProfile.setOnClickListener(v -> {
             Intent intent = new Intent(getActivity(), UserDetailsActivity.class);
-            intent.putExtra("EDIT_MODE", true); // Tell UserDetails to pre-fill data
+            intent.putExtra("EDIT_MODE", true);
             startActivity(intent);
         });
 
         return binding.getRoot();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        displayProfileDetails();
     }
 
     private void displayProfileDetails() {
@@ -43,11 +47,11 @@ public class ProfileFragment extends Fragment {
         String gender = prefs.getString("userGender", "N/A");
         String diet = prefs.getString("userDietPref", "N/A");
 
-        String profileText = "Name: " + name + "\n" +
-                "Age: " + age + " years\n" +
-                "Weight: " + weight + " kg\n" +
-                "Height: " + height + " cm\n" +
-                "Gender: " + gender + "\n" +
+        String profileText = "Name: " + name + "\n\n" +
+                "Age: " + age + " years\n\n" +
+                "Weight: " + weight + " kg\n\n" +
+                "Height: " + height + " cm\n\n" +
+                "Gender: " + gender + "\n\n" +
                 "Diet: " + diet;
 
         binding.textViewProfileDetails.setText(profileText);

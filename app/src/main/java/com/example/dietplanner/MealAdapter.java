@@ -7,6 +7,8 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.example.dietplanner.data.MealOption;
 import com.example.dietplanner.databinding.ListItemMealBinding;
 import java.util.List;
 import java.util.Locale;

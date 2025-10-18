@@ -10,7 +10,7 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import com.example.dietplanner.CoreCalculator;
+import com.example.dietplanner.data.CoreCalculator;
 import com.example.dietplanner.MealSelectionActivity;
 import com.example.dietplanner.UserDetailsActivity;
 import com.example.dietplanner.databinding.FragmentHomeBinding;

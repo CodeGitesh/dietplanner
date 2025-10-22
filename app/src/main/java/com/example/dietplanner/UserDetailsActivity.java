@@ -7,6 +7,7 @@ import android.widget.RadioButton;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import com.example.dietplanner.databinding.ActivityUserDetailsBinding;
+import java.util.Map; // <-- The missing import is now here
 
 public class UserDetailsActivity extends AppCompatActivity {
 
@@ -19,7 +20,6 @@ public class UserDetailsActivity extends AppCompatActivity {
         binding = ActivityUserDetailsBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        // Check if we are in "Edit Mode"
         if (getIntent().getBooleanExtra("EDIT_MODE", false)) {
             loadUserDetailsForEditing();
         }
@@ -27,7 +27,6 @@ public class UserDetailsActivity extends AppCompatActivity {
         binding.buttonSave.setOnClickListener(v -> {
             if (validateInput()) {
                 saveUserDetails();
-                // Always go to HomeActivity after saving
                 Intent intent = new Intent(UserDetailsActivity.this, HomeActivity.class);
                 intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(intent);
@@ -43,7 +42,19 @@ public class UserDetailsActivity extends AppCompatActivity {
         binding.editTextWeight.setText(String.valueOf(prefs.getFloat("userWeight", 0f)));
         binding.editTextHeight.setText(String.valueOf(prefs.getFloat("userHeight", 0f)));
 
-        // Pre-select gender and diet radio buttons
+        String gender = prefs.getString("userGender", "Male");
+        if (gender.equals("Female")) {
+            binding.radioGroupGender.check(R.id.radioButton_female);
+        } else {
+            binding.radioGroupGender.check(R.id.radioButton_male);
+        }
+
+        String diet = prefs.getString("userDietPref", "Vegetarian");
+        if (diet.equals("Non-Vegetarian")) {
+            binding.radioGroupDiet.check(R.id.radioButton_nonveg);
+        } else {
+            binding.radioGroupDiet.check(R.id.radioButton_veg);
+        }
     }
 
     private boolean validateInput() {
@@ -75,11 +86,21 @@ public class UserDetailsActivity extends AppCompatActivity {
         RadioButton selectedDietButton = findViewById(selectedDietId);
         editor.putString("userDietPref", selectedDietButton.getText().toString());
 
-        // Clear old meal selections when profile is updated
+        // Clear all old meal and history data as the user's profile has changed
+        editor.remove("totalCaloriesConsumed");
         editor.remove("selected_Breakfast");
         editor.remove("selected_Lunch");
         editor.remove("selected_Dinner");
-        editor.remove("caloriesConsumed");
+        editor.remove("calories_Breakfast");
+        editor.remove("calories_Lunch");
+        editor.remove("calories_Dinner");
+
+        Map<String, ?> allEntries = settings.getAll();
+        for (Map.Entry<String, ?> entry : allEntries.entrySet()) {
+            if (entry.getKey().startsWith("history_")) {
+                editor.remove(entry.getKey());
+            }
+        }
 
         editor.apply();
     }

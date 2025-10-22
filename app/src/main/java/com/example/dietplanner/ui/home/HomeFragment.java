@@ -24,7 +24,7 @@ public class HomeFragment extends Fragment {
     private SharedPreferences prefs;
     private CoreCalculator coreCalculator;
     private String goalsString = "";
-    private int dailyCalorieTarget = 2000; // Default value
+    private int dailyCalorieTarget = 2000;
 
     @Nullable
     @Override
@@ -44,6 +44,7 @@ public class HomeFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+        loadUserDataAndDisplayGoals();
         updateConsumedCalories();
         updateSelectedMeals();
     }
@@ -59,29 +60,29 @@ public class HomeFragment extends Fragment {
         this.goalsString = coreCalculator.getDietaryGoals(name, age, weight, height, gender);
         binding.textViewGoals.setText(this.goalsString);
 
-        // Extract the target calorie goal for the progress bar
         try {
             String[] lines = goalsString.split("\n");
             for (String line : lines) {
                 if (line.contains("Daily Calorie Target")) {
                     String calPart = line.split(":")[1].trim().split(" ")[0];
                     dailyCalorieTarget = Integer.parseInt(calPart);
+                    prefs.edit().putString("dailyCalorieTarget", String.valueOf(dailyCalorieTarget)).apply();
                     break;
                 }
             }
         } catch (Exception e) {
-            dailyCalorieTarget = 2000; // Fallback
+            dailyCalorieTarget = 2000;
         }
     }
 
     private void updateConsumedCalories() {
-        float consumed = prefs.getFloat("caloriesConsumed", 0f);
+        float consumed = prefs.getFloat("totalCaloriesConsumed", 0f);
         binding.textViewCaloriesConsumed.setText(String.format(Locale.US, "%.0f", consumed));
 
-        // Animate the progress bar
         int progress = (int) ((consumed / dailyCalorieTarget) * 100);
-        ObjectAnimator animation = ObjectAnimator.ofInt(binding.progressBar, "progress", 0, progress);
-        animation.setDuration(1500); // 1.5 seconds
+        binding.progressBar.setMax(100 * 100);
+        ObjectAnimator animation = ObjectAnimator.ofInt(binding.progressBar, "progress", binding.progressBar.getProgress(), progress * 100);
+        animation.setDuration(1500);
         animation.setInterpolator(new DecelerateInterpolator());
         animation.start();
     }
@@ -89,7 +90,7 @@ public class HomeFragment extends Fragment {
     private void updateSelectedMeals() {
         String breakfast = prefs.getString("selected_Breakfast", "");
         if (!breakfast.isEmpty()) {
-            binding.textViewBreakfastSelection.setText("• " + breakfast.replace(", ", "\n• "));
+            binding.textViewBreakfastSelection.setText(formatMealText(breakfast));
             binding.textViewBreakfastSelection.setVisibility(View.VISIBLE);
         } else {
             binding.textViewBreakfastSelection.setVisibility(View.GONE);
@@ -97,7 +98,7 @@ public class HomeFragment extends Fragment {
 
         String lunch = prefs.getString("selected_Lunch", "");
         if (!lunch.isEmpty()) {
-            binding.textViewLunchSelection.setText("• " + lunch.replace(", ", "\n• "));
+            binding.textViewLunchSelection.setText(formatMealText(lunch));
             binding.textViewLunchSelection.setVisibility(View.VISIBLE);
         } else {
             binding.textViewLunchSelection.setVisibility(View.GONE);
@@ -105,11 +106,15 @@ public class HomeFragment extends Fragment {
 
         String dinner = prefs.getString("selected_Dinner", "");
         if (!dinner.isEmpty()) {
-            binding.textViewDinnerSelection.setText("• " + dinner.replace(", ", "\n• "));
+            binding.textViewDinnerSelection.setText(formatMealText(dinner));
             binding.textViewDinnerSelection.setVisibility(View.VISIBLE);
         } else {
             binding.textViewDinnerSelection.setVisibility(View.GONE);
         }
+    }
+
+    private String formatMealText(String mealData) {
+        return "• " + mealData.replace(", ", "\n• ");
     }
 
     private void setupButtonClickListeners() {

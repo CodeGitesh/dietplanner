@@ -4,6 +4,7 @@ import android.view.LayoutInflater;
 import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+import com.example.dietplanner.data.HistoryItem;
 import com.example.dietplanner.databinding.ListItemHistoryDayBinding;
 import java.util.List;
 
@@ -46,20 +47,5 @@ public class HistoryAdapter extends RecyclerView.Adapter<HistoryAdapter.ViewHold
             binding.textViewHistoryCalories.setText(item.calories);
             binding.textViewHistoryMeals.setText(item.meals);
         }
-    }
-}
-
-// A simple data class to hold history information
-class HistoryItem {
-    String date;
-    String calories;
-    String meals;
-
-    HistoryItem(String date, String data) {
-        this.date = date;
-        // Simple parsing of the saved string
-        String[] parts = data.split("\nB:");
-        this.calories = parts.length > 0 ? parts[0] : "";
-        this.meals = parts.length > 1 ? "B:" + parts[1] : "";
     }
 }

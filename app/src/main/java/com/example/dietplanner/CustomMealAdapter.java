@@ -6,12 +6,14 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.dietplanner.data.FoodItem;
 import com.example.dietplanner.databinding.ListItemCustomMealBinding;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
 public class CustomMealAdapter extends RecyclerView.Adapter<CustomMealAdapter.ViewHolder> {
 
-    private final List<FoodItem> foodItems;
+    private final List<FoodItem> foodItemsFull;
+    private List<FoodItem> foodItemsFiltered;
     private final OnItemSelectionChangedListener listener;
 
     public interface OnItemSelectionChangedListener {
@@ -19,7 +21,8 @@ public class CustomMealAdapter extends RecyclerView.Adapter<CustomMealAdapter.Vi
     }
 
     public CustomMealAdapter(List<FoodItem> foodItems, OnItemSelectionChangedListener listener) {
-        this.foodItems = foodItems;
+        this.foodItemsFull = new ArrayList<>(foodItems);
+        this.foodItemsFiltered = new ArrayList<>(foodItems);
         this.listener = listener;
     }
 
@@ -33,13 +36,27 @@ public class CustomMealAdapter extends RecyclerView.Adapter<CustomMealAdapter.Vi
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        FoodItem item = foodItems.get(position);
-        holder.bind(item);
+        holder.bind(foodItemsFiltered.get(position));
     }
 
     @Override
     public int getItemCount() {
-        return foodItems.size();
+        return foodItemsFiltered.size();
+    }
+
+    public void filter(String text) {
+        foodItemsFiltered.clear();
+        if (text.isEmpty()) {
+            foodItemsFiltered.addAll(foodItemsFull);
+        } else {
+            text = text.toLowerCase().trim();
+            for (FoodItem item : foodItemsFull) {
+                if (item.name.toLowerCase().contains(text)) {
+                    foodItemsFiltered.add(item);
+                }
+            }
+        }
+        notifyDataSetChanged();
     }
 
     class ViewHolder extends RecyclerView.ViewHolder {
@@ -51,15 +68,23 @@ public class CustomMealAdapter extends RecyclerView.Adapter<CustomMealAdapter.Vi
         }
 
         public void bind(FoodItem item) {
-            binding.checkboxFoodItem.setText(item.name);
-            binding.textViewFoodCalories.setText(String.format(Locale.US, "%.0f kcal", item.calories));
+            binding.textViewFoodName.setText(item.name);
+            binding.textViewFoodCalories.setText(String.format(Locale.US, "%.0f kcal (per 100g)", item.caloriesPer100g));
+            binding.textViewQuantity.setText(String.format(Locale.US, "%dg", item.quantity));
 
-            binding.checkboxFoodItem.setOnCheckedChangeListener(null);
-            binding.checkboxFoodItem.setChecked(item.isSelected);
-
-            binding.checkboxFoodItem.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                item.isSelected = isChecked;
+            binding.buttonPlus.setOnClickListener(v -> {
+                item.quantity += 50; // Add in 50g increments
+                binding.textViewQuantity.setText(String.format(Locale.US, "%dg", item.quantity));
                 listener.onSelectionChanged();
+            });
+
+            binding.buttonMinus.setOnClickListener(v -> {
+                if (item.quantity > 0) {
+                    item.quantity -= 50;
+                    if (item.quantity < 0) item.quantity = 0;
+                    binding.textViewQuantity.setText(String.format(Locale.US, "%dg", item.quantity));
+                    listener.onSelectionChanged();
+                }
             });
         }
     }

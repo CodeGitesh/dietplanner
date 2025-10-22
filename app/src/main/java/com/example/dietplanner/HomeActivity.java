@@ -17,6 +17,7 @@ import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Map;
 
 public class HomeActivity extends AppCompatActivity {
 
@@ -41,7 +42,6 @@ public class HomeActivity extends AppCompatActivity {
 
         loadCsvData();
 
-        // This is the correct way to set up the navigation controller
         NavHostFragment navHostFragment = (NavHostFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.nav_host_fragment);
         NavController navController = navHostFragment.getNavController();
@@ -52,7 +52,8 @@ public class HomeActivity extends AppCompatActivity {
 
     @Override
     public boolean onSupportNavigateUp() {
-        NavController navController = NavHostFragment.findNavController(getSupportFragmentManager().findFragmentById(R.id.nav_host_fragment));
+        NavHostFragment navHostFragment = (NavHostFragment) getSupportFragmentManager().findFragmentById(R.id.nav_host_fragment);
+        NavController navController = navHostFragment.getNavController();
         return navController.navigateUp() || super.onSupportNavigateUp();
     }
 
@@ -60,23 +61,37 @@ public class HomeActivity extends AppCompatActivity {
         String todayDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
         String lastLoginDate = prefs.getString("lastLoginDate", "");
 
-        if (!todayDate.equals(lastLoginDate)) {
+        if (!todayDate.equals(lastLoginDate) && !lastLoginDate.isEmpty()) {
             SharedPreferences.Editor editor = prefs.edit();
-            editor.putString("lastLoginDate", todayDate);
-            float consumed = prefs.getFloat("caloriesConsumed", 0f);
+
+            float consumed = prefs.getFloat("totalCaloriesConsumed", 0f);
             if (consumed > 0) {
                 String breakfast = prefs.getString("selected_Breakfast", "None");
                 String lunch = prefs.getString("selected_Lunch", "None");
                 String dinner = prefs.getString("selected_Dinner", "None");
-                String historyEntry = "Consumed: " + consumed + " kcal\nB: " + breakfast + "\nL: " + lunch + "\nD: " + dinner;
+                String caloriesTarget = prefs.getString("dailyCalorieTarget", "2000");
+
+                String historyEntry = "Total: " + String.format(Locale.US, "%.0f", consumed) + " / " + caloriesTarget + " kcal\n" +
+                        "B: " + breakfast + "\n" +
+                        "L: " + lunch + "\n" +
+                        "D: " + dinner;
+
                 editor.putString("history_" + lastLoginDate, historyEntry);
             }
 
-            editor.remove("caloriesConsumed");
+            editor.remove("totalCaloriesConsumed");
             editor.remove("selected_Breakfast");
             editor.remove("selected_Lunch");
             editor.remove("selected_Dinner");
+            editor.remove("calories_Breakfast");
+            editor.remove("calories_Lunch");
+            editor.remove("calories_Dinner");
+
+            editor.putString("lastLoginDate", todayDate);
             editor.apply();
+        } else if (lastLoginDate.isEmpty()) {
+            // First time login
+            prefs.edit().putString("lastLoginDate", todayDate).apply();
         }
     }
 

@@ -20,11 +20,11 @@ public class MealSelectionActivity extends AppCompatActivity {
 
     private ActivityMealSelectionBinding binding;
     private CoreCalculator coreCalculator;
-    private List<FoodItem> allFoodItems = new ArrayList<>();
-    private CustomMealAdapter customMealAdapter;
-    private RecommendedMealAdapter recommendedAdapter;
-    private RecommendedMeal currentRecommendation;
-    private String mealType;
+    private List<FoodItem> food_items = new ArrayList<>();
+    private CustomMealAdapter meal_adapter;
+    private RecommendedMealAdapter rec_adapter;
+    private RecommendedMeal current_rec;
+    private String mealtype;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,34 +33,34 @@ public class MealSelectionActivity extends AppCompatActivity {
         setContentView(binding.getRoot());
 
         coreCalculator = new CoreCalculator();
-        mealType = getIntent().getStringExtra("MEAL_TYPE");
-        if (mealType == null) {
+        mealtype = getIntent().getStringExtra("MEAL_TYPE");
+        if (mealtype == null) {
             finish();
             return;
         }
 
-        binding.toolbar.setTitle("Build Your " + mealType);
+        binding.toolbar.setTitle("Build Your " + mealtype);
         binding.toolbar.setNavigationOnClickListener(v -> finish());
 
-        loadAndDisplayMeals();
+        loadmeals();
         setupSearch();
-        setupRecommendationSystem();
+        recommendation_model();
 
-        binding.buttonConfirmMeal.setOnClickListener(v -> confirmCustomMeal());
+        binding.buttonConfirmMeal.setOnClickListener(v -> confirm_meal());
     }
 
-    private void loadAndDisplayMeals() {
+    private void loadmeals() {
         SharedPreferences prefs = getSharedPreferences(UserDetailsActivity.PREFS_NAME, 0);
-        String dietPref = prefs.getString("userDietPref", "Vegetarian");
+        String dietpref = prefs.getString("userdietpref", "Vegetarian");
 
-        String foodListDataString = coreCalculator.getFilteredFoodList(dietPref);
-        String[] items = foodListDataString.split(";");
+        String food_data = coreCalculator.get_foods(dietpref);
+        String[] items = food_data.split(";");
 
         for (String itemData : items) {
             String[] parts = itemData.split("\\|");
             if (parts.length == 3) {
                 try {
-                    allFoodItems.add(new FoodItem(parts[0], Float.parseFloat(parts[1]), Float.parseFloat(parts[2])));
+                    food_items.add(new FoodItem(parts[0], Float.parseFloat(parts[1]), Float.parseFloat(parts[2])));
                 } catch (NumberFormatException e) {
                     e.printStackTrace();
                 }
@@ -68,69 +68,69 @@ public class MealSelectionActivity extends AppCompatActivity {
         }
 
         binding.recyclerViewCustom.setLayoutManager(new LinearLayoutManager(this));
-        customMealAdapter = new CustomMealAdapter(allFoodItems, this::updateCustomMealTotal);
-        binding.recyclerViewCustom.setAdapter(customMealAdapter);
-        updateCustomMealTotal();
+        meal_adapter = new CustomMealAdapter(food_items, this::update_total);
+        binding.recyclerViewCustom.setAdapter(meal_adapter);
+        update_total();
     }
 
     private void setupSearch() {
         binding.searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
-                customMealAdapter.filter(query);
+                meal_adapter.filter(query);
                 return false;
             }
 
             @Override
             public boolean onQueryTextChange(String newText) {
-                customMealAdapter.filter(newText);
+                meal_adapter.filter(newText);
                 return false;
             }
         });
     }
 
-    private void updateCustomMealTotal() {
+    private void update_total() {
         float totalCalories = 0;
-        for (FoodItem item : allFoodItems) {
+        for (FoodItem item : food_items) {
             totalCalories += item.getTotalCalories();
         }
         binding.textViewCustomTotal.setText(String.format(Locale.US, "Total: %.0f kcal", totalCalories));
     }
 
-    private void setupRecommendationSystem() {
+    private void recommendation_model() {
         binding.recyclerViewRecommended.setLayoutManager(new LinearLayoutManager(this));
-        recommendedAdapter = new RecommendedMealAdapter(this::onRecommendationItemChanged);
-        binding.recyclerViewRecommended.setAdapter(recommendedAdapter);
+        rec_adapter = new RecommendedMealAdapter(this::on_rec_changed);
+        binding.recyclerViewRecommended.setAdapter(rec_adapter);
         
-        binding.buttonAcceptRecommendation.setOnClickListener(v -> acceptRecommendation());
-        binding.buttonRejectRecommendation.setOnClickListener(v -> loadNewRecommendation());
+        binding.buttonAcceptRecommendation.setOnClickListener(v -> accept_rec());
+        binding.buttonRejectRecommendation.setOnClickListener(v -> load_new_rec());
         
         loadRecommendation();
     }
 
     private void loadRecommendation() {
         SharedPreferences prefs = getSharedPreferences(UserDetailsActivity.PREFS_NAME, 0);
-        String dailyTarget = prefs.getString("dailyCalorieTarget", "2000");
-        float targetCalories = Float.parseFloat(dailyTarget);
+        String dailyTarget = prefs.getString("daily_cal_target", "2000");
+        float target_cal = Float.parseFloat(dailyTarget);
         
-        float mealCalories = calculateMealCalories(targetCalories, mealType);
-        float mealProtein = calculateMealProtein(mealCalories);
+        float meal_cal = calc_cals(target_cal, mealtype);
+        float meal_protein = calc_protein(meal_cal);
         
-        String dietPref = prefs.getString("userDietPref", "Vegetarian");
-        String recommendationData = coreCalculator.generateMealRecommendation(
-            mealType, mealCalories, mealProtein, dietPref);
+        String dietpref = prefs.getString("userdietpref", "Vegetarian");
+        String recommendationData = coreCalculator.get_recommendation(
+            mealtype, meal_cal, meal_protein, dietpref);
         
-        currentRecommendation = parseRecommendationData(recommendationData);
-        if (currentRecommendation != null && !currentRecommendation.items.isEmpty()) {
-            recommendedAdapter.updateRecommendation(currentRecommendation.items);
+        current_rec = parse_rec_data(recommendationData);
+        if (current_rec != null && !current_rec.items.isEmpty()) {
+            rec_adapter.updateRecommendation(current_rec.items);
             binding.layoutRecommendation.setVisibility(View.VISIBLE);
         } else {
             binding.layoutRecommendation.setVisibility(View.GONE);
         }
     }
 
-    private float calculateMealCalories(float dailyCalories, String mealType) {
-        switch (mealType) {
+    private float calc_cals(float dailyCalories, String mealtype) {
+        switch (mealtype) {
             case "Breakfast": return dailyCalories * 0.25f;
             case "Lunch": return dailyCalories * 0.40f;
             case "Dinner": return dailyCalories * 0.35f;
@@ -138,11 +138,11 @@ public class MealSelectionActivity extends AppCompatActivity {
         }
     }
 
-    private float calculateMealProtein(float mealCalories) {
-        return (mealCalories * 0.30f) / 4.0f;
+    private float calc_protein(float meal_cal) {
+        return (meal_cal * 0.30f) / 4.0f;
     }
 
-    private RecommendedMeal parseRecommendationData(String data) {
+    private RecommendedMeal parse_rec_data(String data) {
         if (data == null || data.isEmpty()) return null;
         
         RecommendedMeal meal = new RecommendedMeal();
@@ -167,14 +167,14 @@ public class MealSelectionActivity extends AppCompatActivity {
         return meal;
     }
 
-    private void onRecommendationItemChanged() {
+    private void on_rec_changed() {
     }
 
-    private void acceptRecommendation() {
-        if (currentRecommendation == null) return;
+    private void accept_rec() {
+        if (current_rec == null) return;
         
-        for (RecommendedItem item : currentRecommendation.items) {
-            for (FoodItem foodItem : allFoodItems) {
+        for (RecommendedItem item : current_rec.items) {
+            for (FoodItem foodItem : food_items) {
                 if (foodItem.name.equals(item.name)) {
                     foodItem.quantity = item.quantity;
                     break;
@@ -182,24 +182,24 @@ public class MealSelectionActivity extends AppCompatActivity {
             }
         }
         
-        customMealAdapter.notifyDataSetChanged();
-        updateCustomMealTotal();
+        meal_adapter.notifyDataSetChanged();
+        update_total();
         
         binding.layoutRecommendation.setVisibility(View.GONE);
         Toast.makeText(this, "Recommendation accepted!", Toast.LENGTH_SHORT).show();
     }
 
-    private void loadNewRecommendation() {
+    private void load_new_rec() {
         loadRecommendation();
     }
 
-    private void confirmCustomMeal() {
-        float newMealCalories = 0;
+    private void confirm_meal() {
+        float new_cal = 0;
         StringBuilder description = new StringBuilder();
 
-        for (FoodItem item : allFoodItems) {
+        for (FoodItem item : food_items) {
             if (item.quantity > 0) {
-                newMealCalories += item.getTotalCalories();
+                new_cal += item.getTotalCalories();
                 if (description.length() > 0) {
                     description.append(", ");
                 }
@@ -207,27 +207,27 @@ public class MealSelectionActivity extends AppCompatActivity {
             }
         }
 
-        if (newMealCalories > 0) {
-            saveMeal(description.toString(), newMealCalories);
+        if (new_cal > 0) {
+            save_meal(description.toString(), new_cal);
         } else {
             // User confirmed an empty meal, which means they want to remove their selection
-            saveMeal("", 0);
+            save_meal("", 0);
         }
     }
 
-    private void saveMeal(String description, float newMealCalories) {
+    private void save_meal(String description, float new_cal) {
         SharedPreferences prefs = getSharedPreferences(UserDetailsActivity.PREFS_NAME, 0);
         SharedPreferences.Editor editor = prefs.edit();
 
         // **FIXED CALORIE LOGIC**
-        float currentGrandTotal = prefs.getFloat("totalCaloriesConsumed", 0f);
-        float oldMealCalories = prefs.getFloat("calories_" + mealType, 0f);
-        float newGrandTotal = (currentGrandTotal - oldMealCalories) + newMealCalories;
+        float grand_total = prefs.getFloat("total_cal", 0f);
+        float old_cal = prefs.getFloat("calories_" + mealtype, 0f);
+        float new_total = (grand_total - old_cal) + new_cal;
 
         // Save all the new values
-        editor.putFloat("totalCaloriesConsumed", newGrandTotal);
-        editor.putString("selected_" + mealType, description);
-        editor.putFloat("calories_" + mealType, newMealCalories);
+        editor.putFloat("total_cal", new_total);
+        editor.putString("selected_" + mealtype, description);
+        editor.putFloat("calories_" + mealtype, new_cal);
 
         editor.apply();
 

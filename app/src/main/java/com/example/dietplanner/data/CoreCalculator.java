@@ -10,10 +10,10 @@ public class CoreCalculator {
         }
     }
 
-    public native void loadMealsFromCSV(String filePath);
-    public native String getDietaryGoals(String name, int age, float weightKg, float heightCm, String gender);
-    public native String getFilteredFoodList(String dietPref);
-    public native String generateMealRecommendation(String mealType, float targetCalories, float targetProtein, String dietPref);
-    public native String getAlternativeRecommendation();
+    public native void load_csv(String path);
+    public native String get_goals(String name, int age, float weight, float height, String gender);
+    public native String get_foods(String diet);
+    public native String get_recommendation(String meal, float tarcalorie, float tarprotein, String diet);
+    public native String get_alt_recommendation();
 
 }

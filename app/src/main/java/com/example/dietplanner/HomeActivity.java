@@ -28,9 +28,9 @@ public class HomeActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         SharedPreferences prefs = getSharedPreferences(UserDetailsActivity.PREFS_NAME, 0);
-        checkDateAndResetData(prefs);
+        check_date(prefs);
 
-        if (!prefs.contains("userName")) {
+        if (!prefs.contains("username")) {
             startActivity(new Intent(this, UserDetailsActivity.class));
             finish();
             return;
@@ -57,53 +57,53 @@ public class HomeActivity extends AppCompatActivity {
         return navController.navigateUp() || super.onSupportNavigateUp();
     }
 
-    private void checkDateAndResetData(SharedPreferences prefs) {
-        String todayDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
-        String lastLoginDate = prefs.getString("lastLoginDate", "");
+    private void check_date(SharedPreferences prefs) {
+        String today = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+        String last_login = prefs.getString("lastLoginDate", "");
 
-        if (!todayDate.equals(lastLoginDate) && !lastLoginDate.isEmpty()) {
+        if (!today.equals(last_login) && !last_login.isEmpty()) {
             SharedPreferences.Editor editor = prefs.edit();
 
-            float consumed = prefs.getFloat("totalCaloriesConsumed", 0f);
+            float consumed = prefs.getFloat("total_cal", 0f);
             if (consumed > 0) {
-                String breakfast = prefs.getString("selected_Breakfast", "None");
-                String lunch = prefs.getString("selected_Lunch", "None");
-                String dinner = prefs.getString("selected_Dinner", "None");
-                String caloriesTarget = prefs.getString("dailyCalorieTarget", "2000");
+                String breakfast = prefs.getString("select_bf", "None");
+                String lunch = prefs.getString("select_ln", "None");
+                String dinner = prefs.getString("select_dinner", "None");
+                String cal_target = prefs.getString("daily_cal_target", "2000");
 
-                String historyEntry = "Total: " + String.format(Locale.US, "%.0f", consumed) + " / " + caloriesTarget + " kcal\n" +
+                String history = "Total: " + String.format(Locale.US, "%.0f", consumed) + " / " + cal_target + " kcal\n" +
                         "B: " + breakfast + "\n" +
                         "L: " + lunch + "\n" +
                         "D: " + dinner;
 
-                editor.putString("history_" + lastLoginDate, historyEntry);
+                editor.putString("history_" + last_login, history);
             }
 
-            editor.remove("totalCaloriesConsumed");
-            editor.remove("selected_Breakfast");
-            editor.remove("selected_Lunch");
-            editor.remove("selected_Dinner");
-            editor.remove("calories_Breakfast");
-            editor.remove("calories_Lunch");
-            editor.remove("calories_Dinner");
+            editor.remove("total_cal");
+            editor.remove("select_bf");
+            editor.remove("select_ln");
+            editor.remove("select_dinner");
+            editor.remove("bf_cal");
+            editor.remove("ln_cal");
+            editor.remove("dn_cal");
 
-            editor.putString("lastLoginDate", todayDate);
+            editor.putString("lastLoginDate", today);
             editor.apply();
-        } else if (lastLoginDate.isEmpty()) {
+        } else if (last_login.isEmpty()) {
             // First time login
-            prefs.edit().putString("lastLoginDate", todayDate).apply();
+            prefs.edit().putString("lastLoginDate", today).apply();
         }
     }
 
     private void loadCsvData() {
         File dataFile = new File(getFilesDir(), "Indian_Food_Nutrition_Processed.csv");
         if (!dataFile.exists()) {
-            copyCsvFromAssets();
+            copy_csv();
         }
-        new CoreCalculator().loadMealsFromCSV(dataFile.getAbsolutePath());
+        new CoreCalculator().load_csv(dataFile.getAbsolutePath());
     }
 
-    private void copyCsvFromAssets() {
+    private void copy_csv() {
         try (InputStream in = getAssets().open("Indian_Food_Nutrition_Processed.csv");
              OutputStream out = new FileOutputStream(new File(getFilesDir(), "Indian_Food_Nutrition_Processed.csv"))) {
             byte[] buffer = new byte[1024];

@@ -29,15 +29,15 @@ public class MainActivity extends AppCompatActivity {
         prefs = getSharedPreferences(UserDetailsActivity.PREFS_NAME, 0);
         coreCalculator = new CoreCalculator();
 
-        if (!prefs.contains("userName")) {
+        if (!prefs.contains("username")) {
             startActivity(new Intent(this, UserDetailsActivity.class));
             finish();
             return;
         }
 
         loadCsvData();
-        loadUserDataAndDisplayGoals();
-        setupButtonClickListeners();
+        load_user_data();
+        setup_buttons();
     }
 
     private void loadCsvData() {
@@ -45,7 +45,7 @@ public class MainActivity extends AppCompatActivity {
         if (!dataFile.exists()) {
             copyCsvFromAssets();
         }
-        coreCalculator.loadMealsFromCSV(dataFile.getAbsolutePath());
+        coreCalculator.load_csv(dataFile.getAbsolutePath());
     }
 
     private void copyCsvFromAssets() {
@@ -62,28 +62,28 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void loadUserDataAndDisplayGoals() {
-        String name = prefs.getString("userName", "User");
-        int age = prefs.getInt("userAge", 0);
-        float weight = prefs.getFloat("userWeight", 0f);
-        float height = prefs.getFloat("userHeight", 0f);
-        String gender = prefs.getString("userGender", "Male");
+    private void load_user_data() {
+        String name = prefs.getString("username", "User");
+        int age = prefs.getInt("age", 0);
+        float weight = prefs.getFloat("weight", 0f);
+        float height = prefs.getFloat("height", 0f);
+        String gender = prefs.getString("gender", "Male");
 
         binding.textViewGreeting.setText("Hello, " + name + "!");
 
-        this.goalsString = coreCalculator.getDietaryGoals(name, age, weight, height, gender);
+        this.goalsString = coreCalculator.get_goals(name, age, weight, height, gender);
         binding.textViewGoals.setText(this.goalsString);
     }
 
-    private void setupButtonClickListeners() {
-        binding.buttonFindBreakfast.setOnClickListener(v -> openMealSelection("Breakfast"));
-        binding.buttonFindLunch.setOnClickListener(v -> openMealSelection("Lunch"));
-        binding.buttonFindDinner.setOnClickListener(v -> openMealSelection("Dinner"));
+    private void setup_buttons() {
+        binding.buttonFindBreakfast.setOnClickListener(v -> meal_selection("Breakfast"));
+        binding.buttonFindLunch.setOnClickListener(v -> meal_selection("Lunch"));
+        binding.buttonFindDinner.setOnClickListener(v -> meal_selection("Dinner"));
     }
 
-    private void openMealSelection(String mealType) {
+    private void meal_selection(String mealtype) {
         Intent intent = new Intent(this, MealSelectionActivity.class);
-        intent.putExtra("MEAL_TYPE", mealType);
+        intent.putExtra("MEAL_TYPE", mealtype);
         intent.putExtra("GOALS_STRING", this.goalsString);
         startActivity(intent);
     }

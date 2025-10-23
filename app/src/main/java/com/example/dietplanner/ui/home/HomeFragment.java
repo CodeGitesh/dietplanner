@@ -57,7 +57,7 @@ public class HomeFragment extends Fragment {
         String gender = prefs.getString("userGender", "Male");
 
         binding.textViewGreeting.setText("Hello, " + name + "!");
-        this.goalsString = coreCalculator.getDietaryGoals(name, age, weight, height, gender);
+        this.goalsString = coreCalculator.get_goals(name, age, weight, height, gender);
         binding.textViewGoals.setText(this.goalsString);
 
         try {

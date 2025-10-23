@@ -35,37 +35,37 @@ typedef struct {
     float totalProtein;
 } RecommendedMeal;
 
-FoodItem* allFoods = NULL;
-int foodCount = 0;
-int foodsLoaded = 0;
-RecommendedMeal* currentRecommendation = NULL;
+FoodItem* foods = NULL;
+int food_count = 0;
+int loaded = 0;
+RecommendedMeal* current_rec = NULL;
 
 
-void cleanupFoodData() {
-    if (allFoods != NULL) {
-        for (int i = 0; i < foodCount; i++) {
-            free(allFoods[i].name);
+void cleanup_food() {
+    if (foods != NULL) {
+        for (int i = 0; i < food_count; i++) {
+            free(foods[i].name);
         }
-        free(allFoods);
-        allFoods = NULL;
-        foodCount = 0;
+        free(foods);
+        foods = NULL;
+        food_count = 0;
     }
-    foodsLoaded = 0;
+    loaded = 0;
 }
 
-void cleanupRecommendation() {
-    if (currentRecommendation != NULL) {
-        for (int i = 0; i < currentRecommendation->itemCount; i++) {
-            free(currentRecommendation->items[i].name);
+void cleanup_rec() {
+    if (current_rec != NULL) {
+        for (int i = 0; i < current_rec->itemCount; i++) {
+            free(current_rec->items[i].name);
         }
-        free(currentRecommendation->items);
-        free(currentRecommendation);
-        currentRecommendation = NULL;
+        free(current_rec->items);
+        free(current_rec);
+        current_rec = NULL;
     }
 }
 
 // Helper function to check for non-veg keywords
-int isNonVeg(const char* name) {
+int isnonveg(const char* name) {
     if (!name) return 0;
     
     char lowerName[256];
@@ -111,7 +111,7 @@ int isNonVeg(const char* name) {
     return 0;
 }
 
-int isAppropriateForMealType(const char* foodName, const char* mealType) {
+int ismealok(const char* foodName, const char* mealType) {
     if (!foodName || !mealType) return 0;
     
     char lowerName[256];
@@ -162,7 +162,7 @@ int isAppropriateForMealType(const char* foodName, const char* mealType) {
     return 0;
 }
 
-float calculateMealCalories(float dailyCalories, const char* mealType) {
+float calc_meal_cal(float dailyCalories, const char* mealType) {
     if (strcmp(mealType, "Breakfast") == 0) return dailyCalories * 0.25f;
     if (strcmp(mealType, "Lunch") == 0) return dailyCalories * 0.40f;
     if (strcmp(mealType, "Dinner") == 0) return dailyCalories * 0.35f;
@@ -171,20 +171,20 @@ float calculateMealCalories(float dailyCalories, const char* mealType) {
 
 
 JNIEXPORT void JNICALL
-Java_com_example_dietplanner_data_CoreCalculator_loadMealsFromCSV(
-        JNIEnv* env, jobject thiz, jstring filePath) {
+Java_com_example_dietplanner_data_CoreCalculator_load_1csv(
+        JNIEnv* env, jobject thiz, jstring path) {
 
-    if (foodsLoaded) {
-        cleanupFoodData();
+    if (loaded) {
+        cleanup_food();
     }
 
-    const char* nativeFilePath = (*env)->GetStringUTFChars(env, filePath, 0);
-    if (!nativeFilePath) {
+    const char* filepath = (*env)->GetStringUTFChars(env, path, 0);
+    if (!filepath) {
         return;
     }
     
-    FILE* file = fopen(nativeFilePath, "r");
-    (*env)->ReleaseStringUTFChars(env, filePath, nativeFilePath);
+    FILE* file = fopen(filepath, "r");
+    (*env)->ReleaseStringUTFChars(env, path, filepath);
 
     if (file == NULL) {
         return;
@@ -199,15 +199,15 @@ Java_com_example_dietplanner_data_CoreCalculator_loadMealsFromCSV(
 
     while (fgets(line, sizeof(line), file)) {
         // Reallocate memory for new food item
-        FoodItem* temp = realloc(allFoods, (foodCount + 1) * sizeof(FoodItem));
+        FoodItem* temp = realloc(foods, (food_count + 1) * sizeof(FoodItem));
         if (temp == NULL) {
             // Memory allocation failed, cleanup and exit
-            cleanupFoodData();
+            cleanup_food();
             fclose(file);
             return;
         }
-        allFoods = temp;
-        FoodItem* food = &allFoods[foodCount];
+        foods = temp;
+        FoodItem* food = &foods[food_count];
 
         // Parse CSV line safely - CSV format: Dish Name,Category,Calories (kcal),Carbohydrates (g),Protein (g),Fats (g)
         char* name = strtok(line, ",");           // 1. Dish Name
@@ -230,69 +230,68 @@ Java_com_example_dietplanner_data_CoreCalculator_loadMealsFromCSV(
             
             // Only add if calories are valid
             if (food->calories_per_100g > 0) {
-                foodCount++;
+                food_count++;
             } else {
                 free(food->name);
             }
         }
     }
     fclose(file);
-    foodsLoaded = 1;
+    loaded = 1;
 }
 
 JNIEXPORT jstring JNICALL
-Java_com_example_dietplanner_data_CoreCalculator_getDietaryGoals(
-        JNIEnv* env, jobject thiz, jstring jName, jint jAge, jfloat jWeight, jfloat jHeight, jstring jGender) {
+Java_com_example_dietplanner_data_CoreCalculator_get_1goals(
+        JNIEnv* env, jobject thiz, jstring name, jint age, jfloat weight, jfloat height, jstring gender) {
 
-    const char* nativeName = (*env)->GetStringUTFChars(env, jName, NULL);
-    const char* nativeGender = (*env)->GetStringUTFChars(env, jGender, NULL);
+    const char* name_str = (*env)->GetStringUTFChars(env, name, NULL);
+    const char* gender_str = (*env)->GetStringUTFChars(env, gender, NULL);
 
-    float bmr = (10 * jWeight) + (6.25 * jHeight) - (5 * jAge);
-    if (strcmp(nativeGender, "Male") == 0) { bmr += 5; } else { bmr -= 161; }
+    float bmr = (10 * weight) + (6.25 * height) - (5 * age);
+    if (strcmp(gender_str, "Male") == 0) { bmr += 5; } else { bmr -= 161; }
 
     float tdee = bmr * 1.375f;
-    float targetCalories = tdee * 0.80f; // 20% deficit
-    int protein_g = (int)round((targetCalories * 0.30f) / 4.0f);
+    float target_calories = tdee * 0.80f;
+    int protein_g = (int)round((target_calories * 0.30f) / 4.0f);
 
     char buffer[512];
     snprintf(buffer, sizeof(buffer),
              "Daily Calorie Target: %d kcal\n"
              "Daily Protein Target: %dg",
-             (int)round(targetCalories), protein_g);
+             (int)round(target_calories), protein_g);
 
-    (*env)->ReleaseStringUTFChars(env, jName, nativeName);
-    (*env)->ReleaseStringUTFChars(env, jGender, nativeGender);
+    (*env)->ReleaseStringUTFChars(env, name, name_str);
+    (*env)->ReleaseStringUTFChars(env, gender, gender_str);
     return (*env)->NewStringUTF(env, buffer);
 }
 
 // Returns a formatted string of all food items based on dietary preference
 JNIEXPORT jstring JNICALL
-Java_com_example_dietplanner_data_CoreCalculator_getFilteredFoodList(
-        JNIEnv *env, jobject thiz, jstring jDietPref) {
+Java_com_example_dietplanner_data_CoreCalculator_get_1foods(
+        JNIEnv *env, jobject thiz, jstring diet) {
 
-    if (!foodsLoaded) {
+    if (!loaded) {
         return (*env)->NewStringUTF(env, "");
     }
 
-    const char* nativeDietPref = (*env)->GetStringUTFChars(env, jDietPref, NULL);
-    int isVeg = (strcmp(nativeDietPref, "Vegetarian") == 0);
-    (*env)->ReleaseStringUTFChars(env, jDietPref, nativeDietPref);
+    const char* dietpref = (*env)->GetStringUTFChars(env, diet, NULL);
+    int isveg = (strcmp(dietpref, "Vegetarian") == 0);
+    (*env)->ReleaseStringUTFChars(env, diet, dietpref);
 
-    size_t bufferSize = foodCount * 256;
+    size_t bufferSize = food_count * 256;
     char* resultString = malloc(bufferSize);
     if (resultString == NULL) return (*env)->NewStringUTF(env, "");
     resultString[0] = '\0';
 
-    for (int i = 0; i < foodCount; i++) {
-        if (isVeg && isNonVeg(allFoods[i].name)) {
-            continue; // Skip non-veg items if user is vegetarian
+    for (int i = 0; i < food_count; i++) {
+        if (isveg && isnonveg(foods[i].name)) {
+            continue;
         }
-        if (allFoods[i].calories_per_100g <= 0) continue;
+        if (foods[i].calories_per_100g <= 0) continue;
 
         char itemBuffer[256];
-        // Format: Name|Calories|Protein;
         snprintf(itemBuffer, sizeof(itemBuffer), "%s|%.2f|%.2f;",
-                 allFoods[i].name, allFoods[i].calories_per_100g, allFoods[i].protein_per_100g);
+                 foods[i].name, foods[i].calories_per_100g, foods[i].protein_per_100g);
 
         strcat(resultString, itemBuffer);
     }
@@ -304,104 +303,104 @@ Java_com_example_dietplanner_data_CoreCalculator_getFilteredFoodList(
 }
 
 JNIEXPORT jstring JNICALL
-Java_com_example_dietplanner_data_CoreCalculator_generateMealRecommendation(
-        JNIEnv* env, jobject thiz, jstring jMealType, jfloat targetCalories, jfloat targetProtein, jstring jDietPref) {
+Java_com_example_dietplanner_data_CoreCalculator_get_1recommendation(
+        JNIEnv* env, jobject thiz, jstring meal, jfloat tarcalorie, jfloat tarprotein, jstring diet) {
     
-    if (!foodsLoaded || foodCount == 0) {
+    if (!loaded || food_count == 0) {
         return (*env)->NewStringUTF(env, "");
     }
     
-    cleanupRecommendation();
+    cleanup_rec();
     
-    const char* mealType = (*env)->GetStringUTFChars(env, jMealType, NULL);
-    const char* dietPref = (*env)->GetStringUTFChars(env, jDietPref, NULL);
+    const char* meal_type = (*env)->GetStringUTFChars(env, meal, NULL);
+    const char* dietpref = (*env)->GetStringUTFChars(env, diet, NULL);
     
-    if (!mealType || !dietPref) {
-        if (mealType) (*env)->ReleaseStringUTFChars(env, jMealType, mealType);
-        if (dietPref) (*env)->ReleaseStringUTFChars(env, jDietPref, dietPref);
+    if (!meal_type || !dietpref) {
+        if (meal_type) (*env)->ReleaseStringUTFChars(env, meal, meal_type);
+        if (dietpref) (*env)->ReleaseStringUTFChars(env, diet, dietpref);
         return (*env)->NewStringUTF(env, "");
     }
     
-    int isVeg = (strcmp(dietPref, "Vegetarian") == 0);
+    int isveg = (strcmp(dietpref, "Vegetarian") == 0);
     
-    currentRecommendation = malloc(sizeof(RecommendedMeal));
-    if (!currentRecommendation) {
-        (*env)->ReleaseStringUTFChars(env, jMealType, mealType);
-        (*env)->ReleaseStringUTFChars(env, jDietPref, dietPref);
+    current_rec = malloc(sizeof(RecommendedMeal));
+    if (!current_rec) {
+        (*env)->ReleaseStringUTFChars(env, meal, meal_type);
+        (*env)->ReleaseStringUTFChars(env, diet, dietpref);
         return (*env)->NewStringUTF(env, "");
     }
     
-    currentRecommendation->items = malloc(5 * sizeof(RecommendedItem));
-    if (!currentRecommendation->items) {
-        free(currentRecommendation);
-        currentRecommendation = NULL;
-        (*env)->ReleaseStringUTFChars(env, jMealType, mealType);
-        (*env)->ReleaseStringUTFChars(env, jDietPref, dietPref);
+    current_rec->items = malloc(5 * sizeof(RecommendedItem));
+    if (!current_rec->items) {
+        free(current_rec);
+        current_rec = NULL;
+        (*env)->ReleaseStringUTFChars(env, meal, meal_type);
+        (*env)->ReleaseStringUTFChars(env, diet, dietpref);
         return (*env)->NewStringUTF(env, "");
     }
     
-    currentRecommendation->itemCount = 0;
-    currentRecommendation->totalCalories = 0;
-    currentRecommendation->totalProtein = 0;
+    current_rec->itemCount = 0;
+    current_rec->totalCalories = 0;
+    current_rec->totalProtein = 0;
     
     srand(time(NULL));
     
     int attempts = 0;
-    while (currentRecommendation->totalCalories < targetCalories * 0.8f && attempts < 100) {
-        int randomIndex = rand() % foodCount;
-        FoodItem* food = &allFoods[randomIndex];
+    while (current_rec->totalCalories < tarcalorie * 0.8f && attempts < 100) {
+        int randomIndex = rand() % food_count;
+        FoodItem* food = &foods[randomIndex];
         
         if (food->calories_per_100g <= 0) {
             attempts++;
             continue;
         }
-        if (isVeg && isNonVeg(food->name)) {
+        if (isveg && isnonveg(food->name)) {
             attempts++;
             continue;
         }
-        if (!isAppropriateForMealType(food->name, mealType)) {
+        if (!ismealok(food->name, meal_type)) {
             attempts++;
             continue;
         }
         
         int quantity = 50 + (rand() % 150);
-        float calories = (food->calories_per_100g / 100.0f) * quantity;
-        float protein = (food->protein_per_100g / 100.0f) * quantity;
+        float food_calories = (food->calories_per_100g / 100.0f) * quantity;
+        float food_protein = (food->protein_per_100g / 100.0f) * quantity;
         
-        if (currentRecommendation->totalCalories + calories > targetCalories * 1.2f) {
+        if (current_rec->totalCalories + food_calories > tarcalorie * 1.2f) {
             attempts++;
             continue;
         }
         
-        RecommendedItem* item = &currentRecommendation->items[currentRecommendation->itemCount];
+        RecommendedItem* item = &current_rec->items[current_rec->itemCount];
         item->name = strdup(food->name);
         if (!item->name) {
             attempts++;
             continue;
         }
         
-        item->calories = calories;
-        item->protein = protein;
+        item->calories = food_calories;
+        item->protein = food_protein;
         item->quantity = quantity;
         
-        currentRecommendation->totalCalories += calories;
-        currentRecommendation->totalProtein += protein;
-        currentRecommendation->itemCount++;
+        current_rec->totalCalories += food_calories;
+        current_rec->totalProtein += food_protein;
+        current_rec->itemCount++;
         
-        if (currentRecommendation->itemCount >= 5) break;
+        if (current_rec->itemCount >= 5) break;
         attempts++;
     }
     
     char buffer[2048];
     buffer[0] = '\0';
     
-    for (int i = 0; i < currentRecommendation->itemCount; i++) {
+    for (int i = 0; i < current_rec->itemCount; i++) {
         char itemBuffer[256];
         snprintf(itemBuffer, sizeof(itemBuffer), "%s|%.2f|%.2f|%d;",
-                 currentRecommendation->items[i].name,
-                 currentRecommendation->items[i].calories,
-                 currentRecommendation->items[i].protein,
-                 currentRecommendation->items[i].quantity);
+                 current_rec->items[i].name,
+                 current_rec->items[i].calories,
+                 current_rec->items[i].protein,
+                 current_rec->items[i].quantity);
 
         if (strlen(buffer) + strlen(itemBuffer) < sizeof(buffer) - 1) {
             strcat(buffer, itemBuffer);
@@ -410,19 +409,19 @@ Java_com_example_dietplanner_data_CoreCalculator_generateMealRecommendation(
         }
     }
     
-    (*env)->ReleaseStringUTFChars(env, jMealType, mealType);
-    (*env)->ReleaseStringUTFChars(env, jDietPref, dietPref);
+    (*env)->ReleaseStringUTFChars(env, meal, meal_type);
+    (*env)->ReleaseStringUTFChars(env, diet, dietpref);
     
     return (*env)->NewStringUTF(env, buffer);
 }
 
 JNIEXPORT jstring JNICALL
-Java_com_example_dietplanner_data_CoreCalculator_getAlternativeRecommendation(
+Java_com_example_dietplanner_data_CoreCalculator_get_1alt_1recommendation(
         JNIEnv* env, jobject thiz) {
     
-    if (!foodsLoaded || currentRecommendation == NULL) return (*env)->NewStringUTF(env, "");
+    if (!loaded || current_rec == NULL) return (*env)->NewStringUTF(env, "");
     
-    cleanupRecommendation();
+    cleanup_rec();
     
     return (*env)->NewStringUTF(env, "");
 }

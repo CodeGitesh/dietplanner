@@ -5,11 +5,6 @@
 #include <math.h>
 #include <ctype.h>
 #include <time.h>
-#include <android/log.h>
-
-#define LOG_TAG "DietPlanner"
-#define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
-#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
 
 typedef struct {
@@ -179,26 +174,20 @@ JNIEXPORT void JNICALL
 Java_com_example_dietplanner_data_CoreCalculator_loadMealsFromCSV(
         JNIEnv* env, jobject thiz, jstring filePath) {
 
-    LOGI("Starting CSV load...");
-    
     if (foodsLoaded) {
         cleanupFoodData();
     }
 
     const char* nativeFilePath = (*env)->GetStringUTFChars(env, filePath, 0);
     if (!nativeFilePath) {
-        LOGE("Failed to get file path from JNI");
         return;
     }
-    
-    LOGI("Loading CSV from: %s", nativeFilePath);
     
     FILE* file = fopen(nativeFilePath, "r");
     (*env)->ReleaseStringUTFChars(env, filePath, nativeFilePath);
 
     if (file == NULL) {
-        LOGE("Failed to open CSV file");
-        return; // File not found or cannot be opened
+        return;
     }
 
     char line[1024];
@@ -249,8 +238,6 @@ Java_com_example_dietplanner_data_CoreCalculator_loadMealsFromCSV(
     }
     fclose(file);
     foodsLoaded = 1;
-    
-    LOGI("CSV loading completed. Loaded %d food items", foodCount);
 }
 
 JNIEXPORT jstring JNICALL
@@ -283,10 +270,7 @@ JNIEXPORT jstring JNICALL
 Java_com_example_dietplanner_data_CoreCalculator_getFilteredFoodList(
         JNIEnv *env, jobject thiz, jstring jDietPref) {
 
-    LOGI("Getting filtered food list...");
-    
     if (!foodsLoaded) {
-        LOGE("Foods not loaded yet");
         return (*env)->NewStringUTF(env, "");
     }
 
@@ -316,7 +300,6 @@ Java_com_example_dietplanner_data_CoreCalculator_getFilteredFoodList(
     jstring finalResult = (*env)->NewStringUTF(env, resultString);
     free(resultString);
 
-    LOGI("Filtered food list generated, length: %zu", strlen(resultString));
     return finalResult;
 }
 
@@ -324,10 +307,7 @@ JNIEXPORT jstring JNICALL
 Java_com_example_dietplanner_data_CoreCalculator_generateMealRecommendation(
         JNIEnv* env, jobject thiz, jstring jMealType, jfloat targetCalories, jfloat targetProtein, jstring jDietPref) {
     
-    LOGI("Generating meal recommendation...");
-    
     if (!foodsLoaded || foodCount == 0) {
-        LOGE("No foods loaded or foodCount is 0. foodsLoaded=%d, foodCount=%d", foodsLoaded, foodCount);
         return (*env)->NewStringUTF(env, "");
     }
     
@@ -433,7 +413,6 @@ Java_com_example_dietplanner_data_CoreCalculator_generateMealRecommendation(
     (*env)->ReleaseStringUTFChars(env, jMealType, mealType);
     (*env)->ReleaseStringUTFChars(env, jDietPref, dietPref);
     
-    LOGI("Generated recommendation with %d items: %s", currentRecommendation->itemCount, buffer);
     return (*env)->NewStringUTF(env, buffer);
 }
 
@@ -446,14 +425,4 @@ Java_com_example_dietplanner_data_CoreCalculator_getAlternativeRecommendation(
     cleanupRecommendation();
     
     return (*env)->NewStringUTF(env, "");
-}
-
-JNIEXPORT jstring JNICALL
-Java_com_example_dietplanner_data_CoreCalculator_debugGetFoodCount(
-        JNIEnv* env, jobject thiz) {
-    
-    char buffer[256];
-    snprintf(buffer, sizeof(buffer), "foodsLoaded=%d, foodCount=%d", foodsLoaded, foodCount);
-    
-    return (*env)->NewStringUTF(env, buffer);
 }

@@ -15,6 +15,5 @@ public class CoreCalculator {
     public native String getFilteredFoodList(String dietPref);
     public native String generateMealRecommendation(String mealType, float targetCalories, float targetProtein, String dietPref);
     public native String getAlternativeRecommendation();
-    public native String debugGetFoodCount();
 
 }

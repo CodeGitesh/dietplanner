@@ -2,12 +2,15 @@ package com.example.dietplanner;
 
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SearchView;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import com.example.dietplanner.data.CoreCalculator;
 import com.example.dietplanner.data.FoodItem;
+import com.example.dietplanner.data.RecommendedItem;
+import com.example.dietplanner.data.RecommendedMeal;
 import com.example.dietplanner.databinding.ActivityMealSelectionBinding;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,6 +22,8 @@ public class MealSelectionActivity extends AppCompatActivity {
     private CoreCalculator coreCalculator;
     private List<FoodItem> allFoodItems = new ArrayList<>();
     private CustomMealAdapter customMealAdapter;
+    private RecommendedMealAdapter recommendedAdapter;
+    private RecommendedMeal currentRecommendation;
     private String mealType;
 
     @Override
@@ -39,6 +44,7 @@ public class MealSelectionActivity extends AppCompatActivity {
 
         loadAndDisplayMeals();
         setupSearch();
+        setupRecommendationSystem();
 
         binding.buttonConfirmMeal.setOnClickListener(v -> confirmCustomMeal());
     }
@@ -89,6 +95,102 @@ public class MealSelectionActivity extends AppCompatActivity {
             totalCalories += item.getTotalCalories();
         }
         binding.textViewCustomTotal.setText(String.format(Locale.US, "Total: %.0f kcal", totalCalories));
+    }
+
+    private void setupRecommendationSystem() {
+        binding.recyclerViewRecommended.setLayoutManager(new LinearLayoutManager(this));
+        recommendedAdapter = new RecommendedMealAdapter(this::onRecommendationItemChanged);
+        binding.recyclerViewRecommended.setAdapter(recommendedAdapter);
+        
+        binding.buttonAcceptRecommendation.setOnClickListener(v -> acceptRecommendation());
+        binding.buttonRejectRecommendation.setOnClickListener(v -> loadNewRecommendation());
+        
+        loadRecommendation();
+    }
+
+    private void loadRecommendation() {
+        SharedPreferences prefs = getSharedPreferences(UserDetailsActivity.PREFS_NAME, 0);
+        String dailyTarget = prefs.getString("dailyCalorieTarget", "2000");
+        float targetCalories = Float.parseFloat(dailyTarget);
+        
+        float mealCalories = calculateMealCalories(targetCalories, mealType);
+        float mealProtein = calculateMealProtein(mealCalories);
+        
+        String dietPref = prefs.getString("userDietPref", "Vegetarian");
+        String recommendationData = coreCalculator.generateMealRecommendation(
+            mealType, mealCalories, mealProtein, dietPref);
+        
+        currentRecommendation = parseRecommendationData(recommendationData);
+        if (currentRecommendation != null && !currentRecommendation.items.isEmpty()) {
+            recommendedAdapter.updateRecommendation(currentRecommendation.items);
+            binding.layoutRecommendation.setVisibility(View.VISIBLE);
+        } else {
+            binding.layoutRecommendation.setVisibility(View.GONE);
+        }
+    }
+
+    private float calculateMealCalories(float dailyCalories, String mealType) {
+        switch (mealType) {
+            case "Breakfast": return dailyCalories * 0.25f;
+            case "Lunch": return dailyCalories * 0.40f;
+            case "Dinner": return dailyCalories * 0.35f;
+            default: return dailyCalories * 0.33f;
+        }
+    }
+
+    private float calculateMealProtein(float mealCalories) {
+        return (mealCalories * 0.30f) / 4.0f;
+    }
+
+    private RecommendedMeal parseRecommendationData(String data) {
+        if (data == null || data.isEmpty()) return null;
+        
+        RecommendedMeal meal = new RecommendedMeal();
+        String[] items = data.split(";");
+        
+        for (String itemData : items) {
+            String[] parts = itemData.split("\\|");
+            if (parts.length == 4) {
+                try {
+                    String name = parts[0];
+                    float calories = Float.parseFloat(parts[1]);
+                    float protein = Float.parseFloat(parts[2]);
+                    int quantity = Integer.parseInt(parts[3]);
+                    
+                    meal.addItem(new RecommendedItem(name, calories, protein, quantity));
+                } catch (NumberFormatException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        
+        return meal;
+    }
+
+    private void onRecommendationItemChanged() {
+    }
+
+    private void acceptRecommendation() {
+        if (currentRecommendation == null) return;
+        
+        for (RecommendedItem item : currentRecommendation.items) {
+            for (FoodItem foodItem : allFoodItems) {
+                if (foodItem.name.equals(item.name)) {
+                    foodItem.quantity = item.quantity;
+                    break;
+                }
+            }
+        }
+        
+        customMealAdapter.notifyDataSetChanged();
+        updateCustomMealTotal();
+        
+        binding.layoutRecommendation.setVisibility(View.GONE);
+        Toast.makeText(this, "Recommendation accepted!", Toast.LENGTH_SHORT).show();
+    }
+
+    private void loadNewRecommendation() {
+        loadRecommendation();
     }
 
     private void confirmCustomMeal() {

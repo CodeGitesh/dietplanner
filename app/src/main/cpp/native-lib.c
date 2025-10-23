@@ -3,12 +3,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include <ctype.h> // For tolower()
+#include <ctype.h>
+#include <time.h>
 
-// --- Data Structures in C ---
+
 typedef struct {
     char* name;
-    // No category needed, we will check by name
     float calories_per_100g;
     float protein_per_100g;
 } FoodItem;
@@ -21,10 +21,25 @@ typedef struct {
     const char* gender;
 } UserProfile;
 
+typedef struct {
+    char* name;
+    float calories;
+    float protein;
+    int quantity;
+} RecommendedItem;
+
+typedef struct {
+    RecommendedItem* items;
+    int itemCount;
+    float totalCalories;
+    float totalProtein;
+} RecommendedMeal;
+
 // Globals for storing food data
 FoodItem* allFoods = NULL;
 int foodCount = 0;
 int foodsLoaded = 0;
+RecommendedMeal* currentRecommendation = NULL;
 
 // Function to free all dynamically allocated memory
 void cleanupFoodData() {
@@ -39,8 +54,21 @@ void cleanupFoodData() {
     foodsLoaded = 0;
 }
 
+void cleanupRecommendation() {
+    if (currentRecommendation != NULL) {
+        for (int i = 0; i < currentRecommendation->itemCount; i++) {
+            free(currentRecommendation->items[i].name);
+        }
+        free(currentRecommendation->items);
+        free(currentRecommendation);
+        currentRecommendation = NULL;
+    }
+}
+
 // Helper function to check for non-veg keywords
 int isNonVeg(const char* name) {
+    if (!name) return 0;
+    
     char lowerName[256];
     strncpy(lowerName, name, 255);
     lowerName[255] = '\0';
@@ -49,6 +77,7 @@ int isNonVeg(const char* name) {
         lowerName[i] = tolower(lowerName[i]);
     }
 
+    // Meat-based keywords
     if (strstr(lowerName, "chicken")) return 1;
     if (strstr(lowerName, "mutton")) return 1;
     if (strstr(lowerName, "fish")) return 1;
@@ -59,8 +88,78 @@ int isNonVeg(const char* name) {
     if (strstr(lowerName, "ham")) return 1;
     if (strstr(lowerName, "bacon")) return 1;
     if (strstr(lowerName, "meat")) return 1;
+    if (strstr(lowerName, "beef")) return 1;
+    if (strstr(lowerName, "pork")) return 1;
+    if (strstr(lowerName, "lamb")) return 1;
+    if (strstr(lowerName, "goat")) return 1;
+    if (strstr(lowerName, "turkey")) return 1;
+    if (strstr(lowerName, "duck")) return 1;
+    if (strstr(lowerName, "seafood")) return 1;
+    if (strstr(lowerName, "shrimp")) return 1;
+    if (strstr(lowerName, "crab")) return 1;
+    if (strstr(lowerName, "lobster")) return 1;
+    if (strstr(lowerName, "sausage")) return 1;
+    if (strstr(lowerName, "patty")) return 1;
+    if (strstr(lowerName, "cutlet")) return 1;
+    if (strstr(lowerName, "kebab")) return 1;
+    if (strstr(lowerName, "tikka")) return 1;
+    if (strstr(lowerName, "biryani")) return 1; // Often contains meat
+    if (strstr(lowerName, "curry") && (strstr(lowerName, "chicken") || strstr(lowerName, "mutton") || strstr(lowerName, "fish"))) return 1;
 
     return 0;
+}
+
+int isAppropriateForMealType(const char* foodName, const char* mealType) {
+    char lowerName[256];
+    strncpy(lowerName, foodName, 255);
+    lowerName[255] = '\0';
+    
+    for(int i = 0; lowerName[i]; i++){
+        lowerName[i] = tolower(lowerName[i]);
+    }
+    
+    if (strcmp(mealType, "Breakfast") == 0) {
+        if (strstr(lowerName, "tea")) return 1;
+        if (strstr(lowerName, "coffee")) return 1;
+        if (strstr(lowerName, "bread")) return 1;
+        if (strstr(lowerName, "cereal")) return 1;
+        if (strstr(lowerName, "milk")) return 1;
+        if (strstr(lowerName, "egg")) return 1;
+        if (strstr(lowerName, "poha")) return 1;
+        if (strstr(lowerName, "upma")) return 1;
+        if (strstr(lowerName, "idli")) return 1;
+        if (strstr(lowerName, "dosa")) return 1;
+        if (strstr(lowerName, "paratha")) return 1;
+        if (strstr(lowerName, "dosa")) return 1;
+    }
+    else if (strcmp(mealType, "Lunch") == 0) {
+        if (strstr(lowerName, "rice")) return 1;
+        if (strstr(lowerName, "dal")) return 1;
+        if (strstr(lowerName, "curry")) return 1;
+        if (strstr(lowerName, "roti")) return 1;
+        if (strstr(lowerName, "chicken")) return 1;
+        if (strstr(lowerName, "mutton")) return 1;
+        if (strstr(lowerName, "fish")) return 1;
+        if (strstr(lowerName, "vegetable")) return 1;
+        if (strstr(lowerName, "sabzi")) return 1;
+    }
+    else if (strcmp(mealType, "Dinner") == 0) {
+        if (strstr(lowerName, "soup")) return 1;
+        if (strstr(lowerName, "salad")) return 1;
+        if (strstr(lowerName, "rice")) return 1;
+        if (strstr(lowerName, "dal")) return 1;
+        if (strstr(lowerName, "roti")) return 1;
+        if (strstr(lowerName, "curry")) return 1;
+        if (strstr(lowerName, "vegetable")) return 1;
+    }
+    return 0;
+}
+
+float calculateMealCalories(float dailyCalories, const char* mealType) {
+    if (strcmp(mealType, "Breakfast") == 0) return dailyCalories * 0.25f;
+    if (strcmp(mealType, "Lunch") == 0) return dailyCalories * 0.40f;
+    if (strcmp(mealType, "Dinner") == 0) return dailyCalories * 0.35f;
+    return dailyCalories * 0.33f;
 }
 
 
@@ -169,4 +268,83 @@ Java_com_example_dietplanner_data_CoreCalculator_getFilteredFoodList(
     free(resultString);
 
     return finalResult;
+}
+
+JNIEXPORT jstring JNICALL
+Java_com_example_dietplanner_data_CoreCalculator_generateMealRecommendation(
+        JNIEnv* env, jobject thiz, jstring jMealType, jfloat targetCalories, jfloat targetProtein, jstring jDietPref) {
+    
+    if (!foodsLoaded) return (*env)->NewStringUTF(env, "");
+    
+    cleanupRecommendation();
+    
+    const char* mealType = (*env)->GetStringUTFChars(env, jMealType, NULL);
+    const char* dietPref = (*env)->GetStringUTFChars(env, jDietPref, NULL);
+    int isVeg = (strcmp(dietPref, "Vegetarian") == 0);
+    
+    currentRecommendation = malloc(sizeof(RecommendedMeal));
+    currentRecommendation->items = malloc(5 * sizeof(RecommendedItem));
+    currentRecommendation->itemCount = 0;
+    currentRecommendation->totalCalories = 0;
+    currentRecommendation->totalProtein = 0;
+    
+    srand(time(NULL));
+    
+    int attempts = 0;
+    while (currentRecommendation->totalCalories < targetCalories * 0.8f && attempts < 100) {
+        int randomIndex = rand() % foodCount;
+        FoodItem* food = &allFoods[randomIndex];
+        
+        if (food->calories_per_100g <= 0) continue;
+        if (isVeg && isNonVeg(food->name)) continue;
+        if (!isAppropriateForMealType(food->name, mealType)) continue;
+        
+        int quantity = 50 + (rand() % 150);
+        float calories = (food->calories_per_100g / 100.0f) * quantity;
+        float protein = (food->protein_per_100g / 100.0f) * quantity;
+        
+        if (currentRecommendation->totalCalories + calories > targetCalories * 1.2f) continue;
+        
+        RecommendedItem* item = &currentRecommendation->items[currentRecommendation->itemCount];
+        item->name = strdup(food->name);
+        item->calories = calories;
+        item->protein = protein;
+        item->quantity = quantity;
+        
+        currentRecommendation->totalCalories += calories;
+        currentRecommendation->totalProtein += protein;
+        currentRecommendation->itemCount++;
+        
+        if (currentRecommendation->itemCount >= 5) break;
+        attempts++;
+    }
+    
+    char buffer[2048];
+    buffer[0] = '\0';
+    
+    for (int i = 0; i < currentRecommendation->itemCount; i++) {
+        char itemBuffer[256];
+        snprintf(itemBuffer, sizeof(itemBuffer), "%s|%.2f|%.2f|%d;",
+                 currentRecommendation->items[i].name,
+                 currentRecommendation->items[i].calories,
+                 currentRecommendation->items[i].protein,
+                 currentRecommendation->items[i].quantity);
+        strcat(buffer, itemBuffer);
+    }
+    
+    (*env)->ReleaseStringUTFChars(env, jMealType, mealType);
+    (*env)->ReleaseStringUTFChars(env, jDietPref, dietPref);
+    
+    return (*env)->NewStringUTF(env, buffer);
+}
+
+JNIEXPORT jstring JNICALL
+Java_com_example_dietplanner_data_CoreCalculator_getAlternativeRecommendation(
+        JNIEnv* env, jobject thiz) {
+    
+    if (!foodsLoaded || currentRecommendation == NULL) return (*env)->NewStringUTF(env, "");
+    
+    cleanupRecommendation();
+    
+    return (*env)->NewStringUTF(env, "");
 }

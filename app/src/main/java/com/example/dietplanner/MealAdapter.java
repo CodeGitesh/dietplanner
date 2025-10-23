@@ -63,12 +63,30 @@ public class MealAdapter extends RecyclerView.Adapter<MealAdapter.MealViewHolder
 
             binding.checkboxAteMeal.setOnCheckedChangeListener((buttonView, isChecked) -> {
                 if (isChecked) {
-                    float currentCalories = prefs.getFloat("caloriesConsumed", 0f);
+                    float currentCalories = prefs.getFloat("total_cal", 0f);
                     float newTotal = currentCalories + meal.totalCalories;
 
                     SharedPreferences.Editor editor = prefs.edit();
-                    editor.putFloat("caloriesConsumed", newTotal);
-                    editor.putString("selected_" + mealType, meal.description);
+                    editor.putFloat("total_cal", newTotal);
+                    
+                    // Map meal types to the correct SharedPreferences keys
+                    String mealKey;
+                    switch (mealType) {
+                        case "Breakfast":
+                            mealKey = "select_bf";
+                            break;
+                        case "Lunch":
+                            mealKey = "select_ln";
+                            break;
+                        case "Dinner":
+                            mealKey = "select_dinner";
+                            break;
+                        default:
+                            mealKey = "selected_" + mealType;
+                            break;
+                    }
+                    
+                    editor.putString(mealKey, meal.description);
                     editor.apply();
 
                     Toast.makeText(itemView.getContext(), "Meal added to your daily plan!", Toast.LENGTH_SHORT).show();

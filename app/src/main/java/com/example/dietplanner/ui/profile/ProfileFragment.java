@@ -40,12 +40,12 @@ public class ProfileFragment extends Fragment {
     }
 
     private void displayProfileDetails() {
-        String name = prefs.getString("userName", "N/A");
-        int age = prefs.getInt("userAge", 0);
-        float weight = prefs.getFloat("userWeight", 0f);
-        float height = prefs.getFloat("userHeight", 0f);
-        String gender = prefs.getString("userGender", "N/A");
-        String diet = prefs.getString("userDietPref", "N/A");
+        String name = prefs.getString("username", "N/A");
+        int age = prefs.getInt("age", 0);
+        float weight = prefs.getFloat("weight", 0f);
+        float height = prefs.getFloat("height", 0f);
+        String gender = prefs.getString("gender", "N/A");
+        String diet = prefs.getString("userdietpref", "N/A");
 
         String profileText = "Name: " + name + "\n\n" +
                 "Age: " + age + " years\n\n" +

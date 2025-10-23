@@ -35,8 +35,8 @@ public class HomeFragment extends Fragment {
         prefs = requireActivity().getSharedPreferences(UserDetailsActivity.PREFS_NAME, Context.MODE_PRIVATE);
         coreCalculator = new CoreCalculator();
 
-        loadUserDataAndDisplayGoals();
-        setupButtonClickListeners();
+        load_user_data();
+        setup_buttons();
 
         return root;
     }
@@ -44,17 +44,17 @@ public class HomeFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        loadUserDataAndDisplayGoals();
+        load_user_data();
         updateConsumedCalories();
-        updateSelectedMeals();
+        update_meals();
     }
 
-    private void loadUserDataAndDisplayGoals() {
-        String name = prefs.getString("userName", "User");
-        int age = prefs.getInt("userAge", 0);
-        float weight = prefs.getFloat("userWeight", 0f);
-        float height = prefs.getFloat("userHeight", 0f);
-        String gender = prefs.getString("userGender", "Male");
+    private void load_user_data() {
+        String name = prefs.getString("username", "User");
+        int age = prefs.getInt("age", 0);
+        float weight = prefs.getFloat("weight", 0f);
+        float height = prefs.getFloat("height", 0f);
+        String gender = prefs.getString("gender", "Male");
 
         binding.textViewGreeting.setText("Hello, " + name + "!");
         this.goalsString = coreCalculator.get_goals(name, age, weight, height, gender);
@@ -66,7 +66,7 @@ public class HomeFragment extends Fragment {
                 if (line.contains("Daily Calorie Target")) {
                     String calPart = line.split(":")[1].trim().split(" ")[0];
                     dailyCalorieTarget = Integer.parseInt(calPart);
-                    prefs.edit().putString("dailyCalorieTarget", String.valueOf(dailyCalorieTarget)).apply();
+                    prefs.edit().putString("daily_cal_target", String.valueOf(dailyCalorieTarget)).apply();
                     break;
                 }
             }
@@ -76,7 +76,7 @@ public class HomeFragment extends Fragment {
     }
 
     private void updateConsumedCalories() {
-        float consumed = prefs.getFloat("totalCaloriesConsumed", 0f);
+        float consumed = prefs.getFloat("total_cal", 0f);
         binding.textViewCaloriesConsumed.setText(String.format(Locale.US, "%.0f", consumed));
 
         int progress = (int) ((consumed / dailyCalorieTarget) * 100);
@@ -87,45 +87,45 @@ public class HomeFragment extends Fragment {
         animation.start();
     }
 
-    private void updateSelectedMeals() {
-        String breakfast = prefs.getString("selected_Breakfast", "");
+    private void update_meals() {
+        String breakfast = prefs.getString("select_bf", "");
         if (!breakfast.isEmpty()) {
-            binding.textViewBreakfastSelection.setText(formatMealText(breakfast));
+            binding.textViewBreakfastSelection.setText(format_meal_text(breakfast));
             binding.textViewBreakfastSelection.setVisibility(View.VISIBLE);
         } else {
             binding.textViewBreakfastSelection.setVisibility(View.GONE);
         }
 
-        String lunch = prefs.getString("selected_Lunch", "");
+        String lunch = prefs.getString("select_ln", "");
         if (!lunch.isEmpty()) {
-            binding.textViewLunchSelection.setText(formatMealText(lunch));
+            binding.textViewLunchSelection.setText(format_meal_text(lunch));
             binding.textViewLunchSelection.setVisibility(View.VISIBLE);
         } else {
             binding.textViewLunchSelection.setVisibility(View.GONE);
         }
 
-        String dinner = prefs.getString("selected_Dinner", "");
+        String dinner = prefs.getString("select_dinner", "");
         if (!dinner.isEmpty()) {
-            binding.textViewDinnerSelection.setText(formatMealText(dinner));
+            binding.textViewDinnerSelection.setText(format_meal_text(dinner));
             binding.textViewDinnerSelection.setVisibility(View.VISIBLE);
         } else {
             binding.textViewDinnerSelection.setVisibility(View.GONE);
         }
     }
 
-    private String formatMealText(String mealData) {
+    private String format_meal_text(String mealData) {
         return "• " + mealData.replace(", ", "\n• ");
     }
 
-    private void setupButtonClickListeners() {
-        binding.buttonFindBreakfast.setOnClickListener(v -> openMealSelection("Breakfast"));
-        binding.buttonFindLunch.setOnClickListener(v -> openMealSelection("Lunch"));
-        binding.buttonFindDinner.setOnClickListener(v -> openMealSelection("Dinner"));
+    private void setup_buttons() {
+        binding.buttonFindBreakfast.setOnClickListener(v -> meal_selection("Breakfast"));
+        binding.buttonFindLunch.setOnClickListener(v -> meal_selection("Lunch"));
+        binding.buttonFindDinner.setOnClickListener(v -> meal_selection("Dinner"));
     }
 
-    private void openMealSelection(String mealType) {
+    private void meal_selection(String mealtype) {
         Intent intent = new Intent(getActivity(), MealSelectionActivity.class);
-        intent.putExtra("MEAL_TYPE", mealType);
+        intent.putExtra("MEAL_TYPE", mealtype);
         intent.putExtra("GOALS_STRING", this.goalsString);
         startActivity(intent);
     }

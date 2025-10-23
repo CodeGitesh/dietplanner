@@ -43,12 +43,12 @@ public class MainActivity extends AppCompatActivity {
     private void loadCsvData() {
         File dataFile = new File(getFilesDir(), "Indian_Food_Nutrition_Processed.csv");
         if (!dataFile.exists()) {
-            copyCsvFromAssets();
+            copy_csv();
         }
         coreCalculator.load_csv(dataFile.getAbsolutePath());
     }
 
-    private void copyCsvFromAssets() {
+    private void copy_csv() {
         try (InputStream in = getAssets().open("Indian_Food_Nutrition_Processed.csv");
              OutputStream out = new FileOutputStream(new File(getFilesDir(), "Indian_Food_Nutrition_Processed.csv"))) {
 

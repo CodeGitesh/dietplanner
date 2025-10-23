@@ -221,13 +221,54 @@ public class MealSelectionActivity extends AppCompatActivity {
 
         // **FIXED CALORIE LOGIC**
         float grand_total = prefs.getFloat("total_cal", 0f);
-        float old_cal = prefs.getFloat("calories_" + mealtype, 0f);
+        
+        // Get the old calories for this meal type using the correct key
+        String oldCalKey;
+        switch (mealtype) {
+            case "Breakfast":
+                oldCalKey = "bf_cal";
+                break;
+            case "Lunch":
+                oldCalKey = "ln_cal";
+                break;
+            case "Dinner":
+                oldCalKey = "dn_cal";
+                break;
+            default:
+                oldCalKey = "calories_" + mealtype;
+                break;
+        }
+        
+        float old_cal = prefs.getFloat(oldCalKey, 0f);
         float new_total = (grand_total - old_cal) + new_cal;
 
         // Save all the new values
         editor.putFloat("total_cal", new_total);
-        editor.putString("selected_" + mealtype, description);
-        editor.putFloat("calories_" + mealtype, new_cal);
+        
+        // Map meal types to the correct SharedPreferences keys
+        String mealKey;
+        String calKey;
+        switch (mealtype) {
+            case "Breakfast":
+                mealKey = "select_bf";
+                calKey = "bf_cal";
+                break;
+            case "Lunch":
+                mealKey = "select_ln";
+                calKey = "ln_cal";
+                break;
+            case "Dinner":
+                mealKey = "select_dinner";
+                calKey = "dn_cal";
+                break;
+            default:
+                mealKey = "selected_" + mealtype;
+                calKey = "calories_" + mealtype;
+                break;
+        }
+        
+        editor.putString(mealKey, description);
+        editor.putFloat(calKey, new_cal);
 
         editor.apply();
 

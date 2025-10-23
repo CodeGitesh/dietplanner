@@ -3,10 +3,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <ctype.h> // For tolower()
 
+// --- Data Structures in C ---
 typedef struct {
     char* name;
-    char* category;
+    // No category needed, we will check by name
     float calories_per_100g;
     float protein_per_100g;
 } FoodItem;
@@ -29,7 +31,6 @@ void cleanupFoodData() {
     if (allFoods != NULL) {
         for (int i = 0; i < foodCount; i++) {
             free(allFoods[i].name);
-            free(allFoods[i].category);
         }
         free(allFoods);
         allFoods = NULL;
@@ -38,13 +39,37 @@ void cleanupFoodData() {
     foodsLoaded = 0;
 }
 
+// Helper function to check for non-veg keywords
+int isNonVeg(const char* name) {
+    char lowerName[256];
+    strncpy(lowerName, name, 255);
+    lowerName[255] = '\0';
+
+    for(int i = 0; lowerName[i]; i++){
+        lowerName[i] = tolower(lowerName[i]);
+    }
+
+    if (strstr(lowerName, "chicken")) return 1;
+    if (strstr(lowerName, "mutton")) return 1;
+    if (strstr(lowerName, "fish")) return 1;
+    if (strstr(lowerName, "egg")) return 1;
+    if (strstr(lowerName, "prawn")) return 1;
+    if (strstr(lowerName, "keema")) return 1;
+    if (strstr(lowerName, "salami")) return 1;
+    if (strstr(lowerName, "ham")) return 1;
+    if (strstr(lowerName, "bacon")) return 1;
+    if (strstr(lowerName, "meat")) return 1;
+
+    return 0;
+}
+
+
 // --- JNI Functions in Pure C ---
 
 JNIEXPORT void JNICALL
 Java_com_example_dietplanner_data_CoreCalculator_loadMealsFromCSV(
         JNIEnv* env, jobject thiz, jstring filePath) {
 
-    // Clean up old data before loading new
     if (foodsLoaded) {
         cleanupFoodData();
     }
@@ -58,23 +83,24 @@ Java_com_example_dietplanner_data_CoreCalculator_loadMealsFromCSV(
     char line[1024];
     fgets(line, sizeof(line), file); // Skip header line
 
-    // Read file line by line and dynamically resize the array
     while (fgets(line, sizeof(line), file)) {
         allFoods = realloc(allFoods, (foodCount + 1) * sizeof(FoodItem));
         FoodItem* food = &allFoods[foodCount];
 
-        // Using strdup to allocate memory for strings
+        // *** THIS IS THE CORRECTED PARSING FOR YOUR ORIGINAL CSV ***
+        // 1. Dish Name
         char* name = strtok(line, ",");
-        char* category = strtok(NULL, ",");
+        // 2. Calories (kcal)
         char* calories = strtok(NULL, ",");
-        strtok(NULL, ","); // Skip Carbohydrates
+        // 3. Carbohydrates (g)
+        char* carbs = strtok(NULL, ",");
+        // 4. Protein (g)
         char* protein = strtok(NULL, ",");
 
         // Clean newline characters from the last token
         if (protein) protein[strcspn(protein, "\r\n")] = 0;
 
         food->name = (name) ? strdup(name) : strdup("");
-        food->category = (category) ? strdup(category) : strdup("Veg");
         food->calories_per_100g = (calories) ? atof(calories) : 0;
         food->protein_per_100g = (protein) ? atof(protein) : 0;
 
@@ -109,7 +135,7 @@ Java_com_example_dietplanner_data_CoreCalculator_getDietaryGoals(
     return (*env)->NewStringUTF(env, buffer);
 }
 
-
+// Returns a formatted string of all food items based on dietary preference
 JNIEXPORT jstring JNICALL
 Java_com_example_dietplanner_data_CoreCalculator_getFilteredFoodList(
         JNIEnv *env, jobject thiz, jstring jDietPref) {
@@ -120,21 +146,20 @@ Java_com_example_dietplanner_data_CoreCalculator_getFilteredFoodList(
     int isVeg = (strcmp(nativeDietPref, "Vegetarian") == 0);
     (*env)->ReleaseStringUTFChars(env, jDietPref, nativeDietPref);
 
-
     size_t bufferSize = foodCount * 256;
     char* resultString = malloc(bufferSize);
     if (resultString == NULL) return (*env)->NewStringUTF(env, "");
     resultString[0] = '\0';
 
     for (int i = 0; i < foodCount; i++) {
-        int isNonVegDish = (strcmp(allFoods[i].category, "Non-Veg") == 0 || strcmp(allFoods[i].category, "Egg") == 0);
-
-        if (isVeg && isNonVegDish) continue;
+        if (isVeg && isNonVeg(allFoods[i].name)) {
+            continue; // Skip non-veg items if user is vegetarian
+        }
         if (allFoods[i].calories_per_100g <= 0) continue;
 
         char itemBuffer[256];
-
-        snprintf(itemBuffer, sizeof(itemBuffer), "%s|%.0f|%.0f;",
+        // Format: Name|Calories|Protein;
+        snprintf(itemBuffer, sizeof(itemBuffer), "%s|%.2f|%.2f;",
                  allFoods[i].name, allFoods[i].calories_per_100g, allFoods[i].protein_per_100g);
 
         strcat(resultString, itemBuffer);

@@ -5,6 +5,11 @@
 #include <math.h>
 #include <ctype.h>
 #include <time.h>
+#include <android/log.h>
+
+#define LOG_TAG "DietPlanner"
+#define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
+#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
 
 typedef struct {
@@ -35,13 +40,12 @@ typedef struct {
     float totalProtein;
 } RecommendedMeal;
 
-// Globals for storing food data
 FoodItem* allFoods = NULL;
 int foodCount = 0;
 int foodsLoaded = 0;
 RecommendedMeal* currentRecommendation = NULL;
 
-// Function to free all dynamically allocated memory
+
 void cleanupFoodData() {
     if (allFoods != NULL) {
         for (int i = 0; i < foodCount; i++) {
@@ -70,6 +74,9 @@ int isNonVeg(const char* name) {
     if (!name) return 0;
     
     char lowerName[256];
+    size_t nameLen = strlen(name);
+    if (nameLen >= 255) return 0; // Prevent buffer overflow
+    
     strncpy(lowerName, name, 255);
     lowerName[255] = '\0';
 
@@ -103,14 +110,19 @@ int isNonVeg(const char* name) {
     if (strstr(lowerName, "cutlet")) return 1;
     if (strstr(lowerName, "kebab")) return 1;
     if (strstr(lowerName, "tikka")) return 1;
-    if (strstr(lowerName, "biryani")) return 1; // Often contains meat
+    if (strstr(lowerName, "biryani")) return 1;
     if (strstr(lowerName, "curry") && (strstr(lowerName, "chicken") || strstr(lowerName, "mutton") || strstr(lowerName, "fish"))) return 1;
 
     return 0;
 }
 
 int isAppropriateForMealType(const char* foodName, const char* mealType) {
+    if (!foodName || !mealType) return 0;
+    
     char lowerName[256];
+    size_t nameLen = strlen(foodName);
+    if (nameLen >= 255) return 0;
+    
     strncpy(lowerName, foodName, 255);
     lowerName[255] = '\0';
     
@@ -163,50 +175,82 @@ float calculateMealCalories(float dailyCalories, const char* mealType) {
 }
 
 
-// --- JNI Functions in Pure C ---
-
 JNIEXPORT void JNICALL
 Java_com_example_dietplanner_data_CoreCalculator_loadMealsFromCSV(
         JNIEnv* env, jobject thiz, jstring filePath) {
 
+    LOGI("Starting CSV load...");
+    
     if (foodsLoaded) {
         cleanupFoodData();
     }
 
     const char* nativeFilePath = (*env)->GetStringUTFChars(env, filePath, 0);
+    if (!nativeFilePath) {
+        LOGE("Failed to get file path from JNI");
+        return;
+    }
+    
+    LOGI("Loading CSV from: %s", nativeFilePath);
+    
     FILE* file = fopen(nativeFilePath, "r");
     (*env)->ReleaseStringUTFChars(env, filePath, nativeFilePath);
 
-    if (file == NULL) return;
+    if (file == NULL) {
+        LOGE("Failed to open CSV file");
+        return; // File not found or cannot be opened
+    }
 
     char line[1024];
-    fgets(line, sizeof(line), file); // Skip header line
+    // Skip header line
+    if (fgets(line, sizeof(line), file) == NULL) {
+        fclose(file);
+        return;
+    }
 
     while (fgets(line, sizeof(line), file)) {
-        allFoods = realloc(allFoods, (foodCount + 1) * sizeof(FoodItem));
+        // Reallocate memory for new food item
+        FoodItem* temp = realloc(allFoods, (foodCount + 1) * sizeof(FoodItem));
+        if (temp == NULL) {
+            // Memory allocation failed, cleanup and exit
+            cleanupFoodData();
+            fclose(file);
+            return;
+        }
+        allFoods = temp;
         FoodItem* food = &allFoods[foodCount];
 
-        // *** THIS IS THE CORRECTED PARSING FOR YOUR ORIGINAL CSV ***
-        // 1. Dish Name
-        char* name = strtok(line, ",");
-        // 2. Calories (kcal)
-        char* calories = strtok(NULL, ",");
-        // 3. Carbohydrates (g)
-        char* carbs = strtok(NULL, ",");
-        // 4. Protein (g)
-        char* protein = strtok(NULL, ",");
+        // Parse CSV line safely - CSV format: Dish Name,Category,Calories (kcal),Carbohydrates (g),Protein (g),Fats (g)
+        char* name = strtok(line, ",");           // 1. Dish Name
+        char* category = strtok(NULL, ",");       // 2. Category (skip)
+        char* calories = strtok(NULL, ",");      // 3. Calories (kcal)
+        char* carbs = strtok(NULL, ",");         // 4. Carbohydrates (g) (skip)
+        char* protein = strtok(NULL, ",");       // 5. Protein (g)
+        char* fats = strtok(NULL, ",");          // 6. Fats (g) (skip)
 
         // Clean newline characters from the last token
-        if (protein) protein[strcspn(protein, "\r\n")] = 0;
+        if (fats) {
+            fats[strcspn(fats, "\r\n")] = 0;
+        }
 
-        food->name = (name) ? strdup(name) : strdup("");
-        food->calories_per_100g = (calories) ? atof(calories) : 0;
-        food->protein_per_100g = (protein) ? atof(protein) : 0;
-
-        foodCount++;
+        // Validate and store data
+        if (name && calories && protein) {
+            food->name = strdup(name);
+            food->calories_per_100g = atof(calories);
+            food->protein_per_100g = atof(protein);
+            
+            // Only add if calories are valid
+            if (food->calories_per_100g > 0) {
+                foodCount++;
+            } else {
+                free(food->name);
+            }
+        }
     }
     fclose(file);
     foodsLoaded = 1;
+    
+    LOGI("CSV loading completed. Loaded %d food items", foodCount);
 }
 
 JNIEXPORT jstring JNICALL
@@ -239,7 +283,12 @@ JNIEXPORT jstring JNICALL
 Java_com_example_dietplanner_data_CoreCalculator_getFilteredFoodList(
         JNIEnv *env, jobject thiz, jstring jDietPref) {
 
-    if (!foodsLoaded) return (*env)->NewStringUTF(env, "");
+    LOGI("Getting filtered food list...");
+    
+    if (!foodsLoaded) {
+        LOGE("Foods not loaded yet");
+        return (*env)->NewStringUTF(env, "");
+    }
 
     const char* nativeDietPref = (*env)->GetStringUTFChars(env, jDietPref, NULL);
     int isVeg = (strcmp(nativeDietPref, "Vegetarian") == 0);
@@ -267,6 +316,7 @@ Java_com_example_dietplanner_data_CoreCalculator_getFilteredFoodList(
     jstring finalResult = (*env)->NewStringUTF(env, resultString);
     free(resultString);
 
+    LOGI("Filtered food list generated, length: %zu", strlen(resultString));
     return finalResult;
 }
 
@@ -274,16 +324,42 @@ JNIEXPORT jstring JNICALL
 Java_com_example_dietplanner_data_CoreCalculator_generateMealRecommendation(
         JNIEnv* env, jobject thiz, jstring jMealType, jfloat targetCalories, jfloat targetProtein, jstring jDietPref) {
     
-    if (!foodsLoaded) return (*env)->NewStringUTF(env, "");
+    LOGI("Generating meal recommendation...");
+    
+    if (!foodsLoaded || foodCount == 0) {
+        LOGE("No foods loaded or foodCount is 0. foodsLoaded=%d, foodCount=%d", foodsLoaded, foodCount);
+        return (*env)->NewStringUTF(env, "");
+    }
     
     cleanupRecommendation();
     
     const char* mealType = (*env)->GetStringUTFChars(env, jMealType, NULL);
     const char* dietPref = (*env)->GetStringUTFChars(env, jDietPref, NULL);
+    
+    if (!mealType || !dietPref) {
+        if (mealType) (*env)->ReleaseStringUTFChars(env, jMealType, mealType);
+        if (dietPref) (*env)->ReleaseStringUTFChars(env, jDietPref, dietPref);
+        return (*env)->NewStringUTF(env, "");
+    }
+    
     int isVeg = (strcmp(dietPref, "Vegetarian") == 0);
     
     currentRecommendation = malloc(sizeof(RecommendedMeal));
+    if (!currentRecommendation) {
+        (*env)->ReleaseStringUTFChars(env, jMealType, mealType);
+        (*env)->ReleaseStringUTFChars(env, jDietPref, dietPref);
+        return (*env)->NewStringUTF(env, "");
+    }
+    
     currentRecommendation->items = malloc(5 * sizeof(RecommendedItem));
+    if (!currentRecommendation->items) {
+        free(currentRecommendation);
+        currentRecommendation = NULL;
+        (*env)->ReleaseStringUTFChars(env, jMealType, mealType);
+        (*env)->ReleaseStringUTFChars(env, jDietPref, dietPref);
+        return (*env)->NewStringUTF(env, "");
+    }
+    
     currentRecommendation->itemCount = 0;
     currentRecommendation->totalCalories = 0;
     currentRecommendation->totalProtein = 0;
@@ -295,18 +371,35 @@ Java_com_example_dietplanner_data_CoreCalculator_generateMealRecommendation(
         int randomIndex = rand() % foodCount;
         FoodItem* food = &allFoods[randomIndex];
         
-        if (food->calories_per_100g <= 0) continue;
-        if (isVeg && isNonVeg(food->name)) continue;
-        if (!isAppropriateForMealType(food->name, mealType)) continue;
+        if (food->calories_per_100g <= 0) {
+            attempts++;
+            continue;
+        }
+        if (isVeg && isNonVeg(food->name)) {
+            attempts++;
+            continue;
+        }
+        if (!isAppropriateForMealType(food->name, mealType)) {
+            attempts++;
+            continue;
+        }
         
         int quantity = 50 + (rand() % 150);
         float calories = (food->calories_per_100g / 100.0f) * quantity;
         float protein = (food->protein_per_100g / 100.0f) * quantity;
         
-        if (currentRecommendation->totalCalories + calories > targetCalories * 1.2f) continue;
+        if (currentRecommendation->totalCalories + calories > targetCalories * 1.2f) {
+            attempts++;
+            continue;
+        }
         
         RecommendedItem* item = &currentRecommendation->items[currentRecommendation->itemCount];
         item->name = strdup(food->name);
+        if (!item->name) {
+            attempts++;
+            continue;
+        }
+        
         item->calories = calories;
         item->protein = protein;
         item->quantity = quantity;
@@ -329,12 +422,18 @@ Java_com_example_dietplanner_data_CoreCalculator_generateMealRecommendation(
                  currentRecommendation->items[i].calories,
                  currentRecommendation->items[i].protein,
                  currentRecommendation->items[i].quantity);
-        strcat(buffer, itemBuffer);
+
+        if (strlen(buffer) + strlen(itemBuffer) < sizeof(buffer) - 1) {
+            strcat(buffer, itemBuffer);
+        } else {
+            break;
+        }
     }
     
     (*env)->ReleaseStringUTFChars(env, jMealType, mealType);
     (*env)->ReleaseStringUTFChars(env, jDietPref, dietPref);
     
+    LOGI("Generated recommendation with %d items: %s", currentRecommendation->itemCount, buffer);
     return (*env)->NewStringUTF(env, buffer);
 }
 
@@ -347,4 +446,14 @@ Java_com_example_dietplanner_data_CoreCalculator_getAlternativeRecommendation(
     cleanupRecommendation();
     
     return (*env)->NewStringUTF(env, "");
+}
+
+JNIEXPORT jstring JNICALL
+Java_com_example_dietplanner_data_CoreCalculator_debugGetFoodCount(
+        JNIEnv* env, jobject thiz) {
+    
+    char buffer[256];
+    snprintf(buffer, sizeof(buffer), "foodsLoaded=%d, foodCount=%d", foodsLoaded, foodCount);
+    
+    return (*env)->NewStringUTF(env, buffer);
 }

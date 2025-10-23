@@ -73,7 +73,7 @@ public class MealAdapter extends RecyclerView.Adapter<MealAdapter.MealViewHolder
 
                     Toast.makeText(itemView.getContext(), "Meal added to your daily plan!", Toast.LENGTH_SHORT).show();
 
-                    // You might want to navigate back or disable other checkboxes here
+
                 }
             });
         }

@@ -7,7 +7,7 @@ import android.widget.RadioButton;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import com.example.dietplanner.databinding.ActivityUserDetailsBinding;
-import java.util.Map; // <-- The missing import is now here
+import java.util.Map;
 
 public class UserDetailsActivity extends AppCompatActivity {
 

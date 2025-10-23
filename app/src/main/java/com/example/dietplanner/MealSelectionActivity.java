@@ -53,8 +53,15 @@ public class MealSelectionActivity extends AppCompatActivity {
         SharedPreferences prefs = getSharedPreferences(UserDetailsActivity.PREFS_NAME, 0);
         String dietPref = prefs.getString("userDietPref", "Vegetarian");
 
+        // Debug: Check if CSV was loaded
+        String debugInfo = coreCalculator.debugGetFoodCount();
+        android.util.Log.d("MealSelection", "Debug info: " + debugInfo);
+
         String foodListDataString = coreCalculator.getFilteredFoodList(dietPref);
+        android.util.Log.d("MealSelection", "Food list data length: " + foodListDataString.length());
+        
         String[] items = foodListDataString.split(";");
+        android.util.Log.d("MealSelection", "Number of food items: " + items.length);
 
         for (String itemData : items) {
             String[] parts = itemData.split("\\|");
@@ -117,14 +124,23 @@ public class MealSelectionActivity extends AppCompatActivity {
         float mealProtein = calculateMealProtein(mealCalories);
         
         String dietPref = prefs.getString("userDietPref", "Vegetarian");
+        
+        android.util.Log.d("MealSelection", "Generating recommendation for " + mealType + 
+                          " with " + mealCalories + " calories, " + mealProtein + " protein");
+        
         String recommendationData = coreCalculator.generateMealRecommendation(
             mealType, mealCalories, mealProtein, dietPref);
         
+        android.util.Log.d("MealSelection", "Recommendation data: " + recommendationData);
+        
         currentRecommendation = parseRecommendationData(recommendationData);
         if (currentRecommendation != null && !currentRecommendation.items.isEmpty()) {
+            android.util.Log.d("MealSelection", "Recommendation parsed successfully with " + 
+                              currentRecommendation.items.size() + " items");
             recommendedAdapter.updateRecommendation(currentRecommendation.items);
             binding.layoutRecommendation.setVisibility(View.VISIBLE);
         } else {
+            android.util.Log.d("MealSelection", "No recommendation generated");
             binding.layoutRecommendation.setVisibility(View.GONE);
         }
     }
